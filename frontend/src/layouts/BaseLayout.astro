@@ -1,0 +1,30 @@
+﻿---
+import '../styles/global.css';
+const { title = 'Panel de facturacion' } = Astro.props;
+---
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <header class="px-4 py-6 shadow-sm bg-white">
+      <div class="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p class="text-sm uppercase tracking-wide text-primary">Sistema de facturacion</p>
+          <h1 class="text-2xl font-semibold text-slate-900">{title}</h1>
+        </div>
+        <a
+          class="text-sm text-primary underline underline-offset-4"
+          href="/"
+        >
+          Documentacion rapida
+        </a>
+      </div>
+    </header>
+    <main class="mx-auto max-w-6xl px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

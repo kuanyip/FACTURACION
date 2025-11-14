@@ -1,0 +1,50 @@
+﻿---
+const { invoices = [] } = Astro.props;
+const months = Array.from({ length: 6 }, (_, index) => {
+  const date = new Date();
+  date.setMonth(date.getMonth() - (5 - index));
+  return {
+    key: `${date.getFullYear()}-${date.getMonth()}`,
+    label: date.toLocaleString('es-MX', { month: 'short' }),
+    total: 0
+  };
+});
+
+invoices.forEach((invoice) => {
+  const value = invoice.issueDate || invoice.createdAt;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return;
+  }
+  const key = `${date.getFullYear()}-${date.getMonth()}`;
+  const bucket = months.find((month) => month.key === key);
+  if (bucket) {
+    bucket.total += Number(invoice.total || 0);
+  }
+});
+
+const maxTotal = Math.max(...months.map((month) => month.total), 1);
+---
+<section class="card space-y-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm uppercase tracking-wide text-slate-500">Tendencia</p>
+      <h3 class="text-lg font-semibold text-slate-900">Ingresos de los ultimos 6 meses</h3>
+    </div>
+  </div>
+  <div class="mt-6 flex h-56 items-end gap-4">
+    {months.map((month) => (
+      <div class="flex-1 text-center" key={month.key}>
+        <div
+          class="mx-auto flex w-full max-w-[3rem] flex-col-reverse justify-end rounded-t-md bg-gradient-to-t from-primary/20 to-primary/80"
+          style={`height: ${Math.max((month.total / maxTotal) * 100, 5)}%`}
+        >
+          <span class="pb-2 text-xs font-semibold text-primary">
+            ${month.total.toFixed(0)}
+          </span>
+        </div>
+        <p class="mt-2 text-xs uppercase text-slate-500">{month.label}</p>
+      </div>
+    ))}
+  </div>
+</section>

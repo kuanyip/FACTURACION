@@ -1,0 +1,26 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InvoiceSummary from '../components/InvoiceSummary.astro';
+import QuickActions from '../components/QuickActions.astro';
+import RevenueChart from '../components/RevenueChart.astro';
+import AuthCard from '../components/AuthCard.astro';
+import { getDashboardData } from '../lib/api';
+
+const dashboard = await getDashboardData();
+const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+---
+<BaseLayout title="Panel de facturacion">
+  <div class="space-y-8">
+    <InvoiceSummary
+      invoices={dashboard.invoices}
+      customers={dashboard.customers}
+      totalRevenue={dashboard.totalRevenue}
+      outstanding={dashboard.outstanding}
+    />
+    <div class="grid gap-6 lg:grid-cols-2">
+      <AuthCard apiBase={apiBase} />
+      <QuickActions apiBase={apiBase} />
+    </div>
+    <RevenueChart invoices={dashboard.invoices} />
+  </div>
+</BaseLayout>
