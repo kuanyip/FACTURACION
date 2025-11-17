@@ -7,6 +7,12 @@ module.exports = {
     res.json({ data: facturas });
   }),
 
+  listarPorEstado: asyncHandler(async (req, res) => {
+    const { estadoId } = req.validated.params;
+    const facturas = await facturaService.buscarPorEstado(estadoId);
+    res.json({ data: facturas });
+  }),
+
   crear: asyncHandler(async (req, res) => {
     const { body } = req.validated;
     const factura = await facturaService.crearFactura(body);

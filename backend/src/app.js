@@ -42,6 +42,13 @@ app.use('/api/emisores', authMiddleware, emisorRoutes);
 app.use('/api/formas-pago', authMiddleware, formaPagoRoutes);
 app.use('/api/estados-factura', authMiddleware, estadoFacturaRoutes);
 
+// Alias sin prefijo /api por compatibilidad
+app.use('/clientes', authMiddleware, clienteRoutes);
+app.use('/facturas', authMiddleware, facturaRoutes);
+app.use('/emisores', authMiddleware, emisorRoutes);
+app.use('/formas-pago', authMiddleware, formaPagoRoutes);
+app.use('/estados-factura', authMiddleware, estadoFacturaRoutes);
+
 app.use((req, res) => {
   res.status(404).json({ message: 'Ruta no encontrada' });
 });

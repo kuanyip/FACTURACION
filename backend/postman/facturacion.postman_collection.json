@@ -262,6 +262,21 @@
           "response": []
         },
         {
+          "name": "Listar facturas por estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facturas/estado/{{estadoFacturaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["facturas", "estado", "{{estadoFacturaId}}"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Crear factura (con detalles/impuestos/referencias)",
           "request": {
             "method": "POST",

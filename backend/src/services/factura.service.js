@@ -135,6 +135,15 @@ const buscarTodas = async () => {
   return rows;
 };
 
+const buscarPorEstado = async (estadoId) => {
+  await ensureExists(pool, 'estado_factura', 'id_estado_factura', estadoId, 'Estado de factura no encontrado');
+  const [rows] = await pool.query(
+    `${facturaBaseSelect} WHERE f.id_estado_factura = ? ORDER BY f.fecha_creacion DESC`,
+    [estadoId]
+  );
+  return rows;
+};
+
 const insertarDetalles = async (conn, facturaId, detalles = []) => {
   if (!detalles?.length) return;
   const insertSql = `
@@ -368,6 +377,7 @@ const eliminarFactura = async (id) => {
 
 module.exports = {
   buscarTodas,
+  buscarPorEstado,
   crearFactura,
   actualizarFactura,
   eliminarFactura,

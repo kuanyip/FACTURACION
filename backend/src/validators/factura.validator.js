@@ -91,8 +91,17 @@ const actualizarFacturaSchema = z.object({
 
 const facturaIdParamsSchema = idParamsSchema;
 
+const facturaEstadoParamsSchema = z.object({
+  params: z
+    .object({
+      estadoId: z.coerce.number().int('Estado invalido').positive('Estado invalido')
+    })
+    .strict()
+});
+
 module.exports = {
   crearFacturaSchema,
   actualizarFacturaSchema,
-  facturaIdParamsSchema
+  facturaIdParamsSchema,
+  facturaEstadoParamsSchema
 };
