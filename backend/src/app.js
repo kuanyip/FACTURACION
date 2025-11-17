@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth.routes');
 const clienteRoutes = require('./routes/cliente.routes');
 const facturaRoutes = require('./routes/factura.routes');
+const emisorRoutes = require('./routes/emisor.routes');
+const formaPagoRoutes = require('./routes/forma-pago.routes');
+const estadoFacturaRoutes = require('./routes/estado-factura.routes');
 const authMiddleware = require('./middleware/auth');
 const { version } = require('../package.json');
 
@@ -35,6 +38,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', authMiddleware, clienteRoutes);
 app.use('/api/facturas', authMiddleware, facturaRoutes);
+app.use('/api/emisores', authMiddleware, emisorRoutes);
+app.use('/api/formas-pago', authMiddleware, formaPagoRoutes);
+app.use('/api/estados-factura', authMiddleware, estadoFacturaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Ruta no encontrada' });

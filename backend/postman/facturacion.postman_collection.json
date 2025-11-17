@@ -8,7 +8,10 @@
     { "key": "base_url", "value": "http://localhost:3800/api", "type": "default" },
     { "key": "token", "value": "", "type": "default" },
     { "key": "clienteId", "value": "1", "type": "default" },
-    { "key": "facturaId", "value": "1", "type": "default" }
+    { "key": "facturaId", "value": "1", "type": "default" },
+    { "key": "emisorId", "value": "1", "type": "default" },
+    { "key": "formaPagoId", "value": "1", "type": "default" },
+    { "key": "estadoFacturaId", "value": "1", "type": "default" }
   ],
   "item": [
     {
@@ -28,6 +31,156 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Emisores",
+      "item": [
+        {
+          "name": "Listar emisores",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/emisores", "host": ["{{base_url}}"], "path": ["emisores"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear emisor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rut\": \"76543210-1\",\n  \"razonSocial\": \"Servicios Informáticos Chile SpA\",\n  \"giro\": \"Servicios de informática\",\n  \"direccion\": \"Av. Alameda 1234\",\n  \"comuna\": \"Santiago\",\n  \"ciudad\": \"Santiago\",\n  \"telefono\": \"+56223456789\",\n  \"email\": \"contacto@si-chile.cl\",\n  \"sitioWeb\": \"www.si-chile.cl\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/emisores", "host": ["{{base_url}}"], "path": ["emisores"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar emisor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"telefono\": \"+56299999999\"\n}" },
+            "url": { "raw": "{{base_url}}/emisores/{{emisorId}}", "host": ["{{base_url}}"], "path": ["emisores", "{{emisorId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar emisor",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/emisores/{{emisorId}}", "host": ["{{base_url}}"], "path": ["emisores", "{{emisorId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Formas de pago",
+      "item": [
+        {
+          "name": "Listar formas de pago",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/formas-pago", "host": ["{{base_url}}"], "path": ["formas-pago"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear forma de pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"TAR\",\n  \"nombre\": \"Tarjeta\",\n  \"descripcion\": \"Tarjeta de crédito/débito\"\n}" },
+            "url": { "raw": "{{base_url}}/formas-pago", "host": ["{{base_url}}"], "path": ["formas-pago"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar forma de pago",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Transferencia\"\n}" },
+            "url": { "raw": "{{base_url}}/formas-pago/{{formaPagoId}}", "host": ["{{base_url}}"], "path": ["formas-pago", "{{formaPagoId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar forma de pago",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/formas-pago/{{formaPagoId}}", "host": ["{{base_url}}"], "path": ["formas-pago", "{{formaPagoId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Estados de factura",
+      "item": [
+        {
+          "name": "Listar estados de factura",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/estados-factura", "host": ["{{base_url}}"], "path": ["estados-factura"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear estado",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"BORRADOR\",\n  \"nombre\": \"Borrador\",\n  \"descripcion\": \"Pendiente de envío\",\n  \"esFinal\": false\n}" },
+            "url": { "raw": "{{base_url}}/estados-factura", "host": ["{{base_url}}"], "path": ["estados-factura"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar estado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"esFinal\": true\n}" },
+            "url": { "raw": "{{base_url}}/estados-factura/{{estadoFacturaId}}", "host": ["{{base_url}}"], "path": ["estados-factura", "{{estadoFacturaId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar estado",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/estados-factura/{{estadoFacturaId}}", "host": ["{{base_url}}"], "path": ["estados-factura", "{{estadoFacturaId}}"] }
           },
           "response": []
         }
@@ -118,7 +271,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tipoDte\": 33,\n  \"folio\": 12345,\n  \"fechaEmision\": \"2025-11-18\",\n  \"moneda\": \"CLP\",\n  \"emisorId\": 1,\n  \"clienteId\": 1,\n  \"condicionPago\": \"CONTADO\",\n  \"formaPagoId\": 1,\n  \"fechaVencimiento\": \"2025-12-02\",\n  \"ordenCompra\": \"OC-123\",\n  \"netoAfecto\": 100000,\n  \"netoExento\": 0,\n  \"otrosCargos\": 0,\n  \"impuestoEspecifico\": 0,\n  \"montoIva\": 19000,\n  \"total\": 119000,\n  \"estadoFacturaId\": 1,\n  \"detalles\": [\n    {\n      \"descripcion\": \"Servicio mensual\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 100000,\n      \"descuentoPorcentaje\": 0,\n      \"subtotal\": 100000\n    }\n  ],\n  \"impuestos\": [\n    {\n      \"codigoImpuesto\": \"IVA\",\n      \"descripcion\": \"IVA 19%\",\n      \"monto\": 19000\n    }\n  ],\n  \"referencias\": [\n    {\n      \"tipoDoc\": \"OC\",\n      \"folioRef\": \"OC-123\",\n      \"fechaRef\": \"2025-11-01\",\n      \"motivo\": \"Orden de compra\"\n    }\n  ]\n}"
+              "raw": "{\n  \"tipoDte\": 33,\n  \"folio\": 12345,\n  \"fechaEmision\": \"2025-11-18\",\n  \"moneda\": \"CLP\",\n  \"emisorId\": {{emisorId}},\n  \"clienteId\": {{clienteId}},\n  \"condicionPago\": \"CONTADO\",\n  \"formaPagoId\": {{formaPagoId}},\n  \"fechaVencimiento\": \"2025-12-02\",\n  \"ordenCompra\": \"OC-123\",\n  \"netoAfecto\": 100000,\n  \"netoExento\": 0,\n  \"otrosCargos\": 0,\n  \"impuestoEspecifico\": 0,\n  \"montoIva\": 19000,\n  \"total\": 119000,\n  \"estadoFacturaId\": {{estadoFacturaId}},\n  \"detalles\": [\n    {\n      \"descripcion\": \"Servicio mensual\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 100000,\n      \"descuentoPorcentaje\": 0,\n      \"subtotal\": 100000\n    }\n  ],\n  \"impuestos\": [\n    {\n      \"codigoImpuesto\": \"IVA\",\n      \"descripcion\": \"IVA 19%\",\n      \"monto\": 19000\n    }\n  ],\n  \"referencias\": [\n    {\n      \"tipoDoc\": \"OC\",\n      \"folioRef\": \"OC-123\",\n      \"fechaRef\": \"2025-11-01\",\n      \"motivo\": \"Orden de compra\"\n    }\n  ]\n}"
             },
             "url": { "raw": "{{base_url}}/facturas", "host": ["{{base_url}}"], "path": ["facturas"] }
           },
