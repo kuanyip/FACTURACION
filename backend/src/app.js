@@ -4,8 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth.routes');
-const customerRoutes = require('./routes/customer.routes');
-const invoiceRoutes = require('./routes/invoice.routes');
+const clienteRoutes = require('./routes/cliente.routes');
+const facturaRoutes = require('./routes/factura.routes');
 const authMiddleware = require('./middleware/auth');
 const { version } = require('../package.json');
 
@@ -33,8 +33,8 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/customers', authMiddleware, customerRoutes);
-app.use('/api/invoices', authMiddleware, invoiceRoutes);
+app.use('/api/clientes', authMiddleware, clienteRoutes);
+app.use('/api/facturas', authMiddleware, facturaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Ruta no encontrada' });

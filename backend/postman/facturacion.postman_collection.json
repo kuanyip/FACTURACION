@@ -1,0 +1,287 @@
+{
+  "info": {
+    "_postman_id": "c3d6e4c4-88a4-4ced-b5b6-9fbe72bde0b5",
+    "name": "API Facturación (rutas en español)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3800/api",
+      "type": "default"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "default"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@correo.cl\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clientes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clientes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Empresa Demo\",\n  \"email\": \"contacto@demo.cl\",\n  \"taxId\": \"77.123.456-7\",\n  \"phone\": \"+56 9 1234 5678\",\n  \"address\": \"Av. Siempre Viva 123, Santiago\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clientes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar cliente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+56 2 5555 5555\",\n  \"address\": \"Nueva direccion 456, Valparaiso\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/clientes/{{clienteId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clientes",
+                "{{clienteId}}"
+              ]
+            },
+            "description": "Reemplaza {{clienteId}} por el ID numérico del cliente."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clientes/{{clienteId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clientes",
+                "{{clienteId}}"
+              ]
+            },
+            "description": "Reemplaza {{clienteId}} por el ID numérico del cliente."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        {
+          "name": "Listar facturas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear factura",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 1,\n  \"description\": \"Servicio de cobranza mensual\",\n  \"status\": \"draft\",\n  \"issueDate\": \"2025-11-17\",\n  \"dueDate\": \"2025-12-02\",\n  \"total\": 150000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/facturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facturas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar factura",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"sent\",\n  \"dueDate\": \"2025-12-10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/facturas/{{facturaId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facturas",
+                "{{facturaId}}"
+              ]
+            },
+            "description": "Reemplaza {{facturaId}} por el ID numérico de la factura."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar factura",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facturas/{{facturaId}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "facturas",
+                "{{facturaId}}"
+              ]
+            },
+            "description": "Reemplaza {{facturaId}} por el ID numérico de la factura."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
