@@ -5,6 +5,7 @@ const estadoSelect = `
   SELECT
     id_estado_factura AS id,
     codigo,
+    codigo_sii AS codigoSii,
     nombre,
     descripcion,
     es_final AS esFinal
@@ -28,16 +29,22 @@ const buscarTodos = async () => {
   return rows;
 };
 
-const crearEstado = async ({ codigo, nombre, descripcion, esFinal }) => {
+const crearEstado = async ({ codigo, codigoSii, nombre, descripcion, esFinal }) => {
   const [result] = await pool.execute(
-    'INSERT INTO estado_factura (codigo, nombre, descripcion, es_final) VALUES (?, ?, ?, ?)',
-    [codigo, nombre, descripcion ?? null, esFinal ? 1 : 0]
+    'INSERT INTO estado_factura (codigo, codigo_sii, nombre, descripcion, es_final) VALUES (?, ?, ?, ?, ?)',
+    [codigo, codigoSii ?? null, nombre, descripcion ?? null, esFinal ? 1 : 0]
   );
   return asegurar(await obtenerPorId(result.insertId), 'No se pudo crear el estado de factura');
 };
 
 const actualizarEstado = async (id, data) => {
-  const columnas = { codigo: 'codigo', nombre: 'nombre', descripcion: 'descripcion', esFinal: 'es_final' };
+  const columnas = {
+    codigo: 'codigo',
+    codigoSii: 'codigo_sii',
+    nombre: 'nombre',
+    descripcion: 'descripcion',
+    esFinal: 'es_final'
+  };
   const sets = [];
   const values = [];
 

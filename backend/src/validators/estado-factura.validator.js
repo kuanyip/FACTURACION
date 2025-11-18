@@ -11,6 +11,7 @@ const idParamsSchema = z.object({
 const baseEstadoSchema = z
   .object({
     codigo: z.string().trim().min(2, 'Codigo requerido').max(20),
+    codigoSii: z.coerce.number().int('Codigo SII invalido').nonnegative('Codigo SII invalido').optional(),
     nombre: z.string().trim().min(2, 'Nombre requerido').max(50),
     descripcion: z.string().trim().max(200).optional().or(z.literal('').transform(() => undefined)),
     esFinal: z

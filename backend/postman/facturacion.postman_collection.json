@@ -274,7 +274,7 @@
               { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"BORRADOR\",\n  \"nombre\": \"Borrador\",\n  \"descripcion\": \"Pendiente de envío\",\n  \"esFinal\": false\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"BORRADOR\",\n  \"codigoSii\": 10,\n  \"nombre\": \"Borrador\",\n  \"descripcion\": \"Pendiente de envío\",\n  \"esFinal\": false\n}" },
             "url": { "raw": "{{base_url}}/estados-factura", "host": ["{{base_url}}"], "path": ["estados-factura"] }
           },
           "response": []
@@ -287,7 +287,7 @@
               { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"esFinal\": true\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"codigoSii\": 11,\n  \"esFinal\": true\n}" },
             "url": { "raw": "{{base_url}}/estados-factura/{{estadoFacturaId}}", "host": ["{{base_url}}"], "path": ["estados-factura", "{{estadoFacturaId}}"] }
           },
           "response": []

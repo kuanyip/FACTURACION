@@ -96,6 +96,7 @@ INSERT INTO `emisor` (`id_emisor`, `rut`, `razon_social`, `giro`, `direccion`, `
 CREATE TABLE `estado_factura` (
   `id_estado_factura` tinyint NOT NULL,
   `codigo` varchar(20) NOT NULL,
+  `codigo_sii` smallint DEFAULT NULL,
   `nombre` varchar(50) NOT NULL,
   `descripcion` varchar(200) DEFAULT NULL,
   `es_final` tinyint(1) NOT NULL DEFAULT '0'
@@ -105,12 +106,12 @@ CREATE TABLE `estado_factura` (
 -- Volcado de datos para la tabla `estado_factura`
 --
 
-INSERT INTO `estado_factura` (`id_estado_factura`, `codigo`, `nombre`, `descripcion`, `es_final`) VALUES
-(1, 'EMITIDA', 'Emitida', 'Factura emitida aún no procesada por SII', 0),
-(2, 'PEND_ENVIO_SII', 'Pendiente envío SII', 'Pendiente de envío o recepción por el SII', 0),
-(3, 'ACEPTADA_SII', 'Aceptada por SII', 'Documento recibido y aceptado por el SII', 1),
-(4, 'RECHAZADA_SII', 'Rechazada por SII', 'Documento rechazado por el SII', 1),
-(5, 'ANULADA', 'Anulada', 'Factura anulada, sin efecto tributario/comercial', 1);
+INSERT INTO `estado_factura` (`id_estado_factura`, `codigo`, `codigo_sii`, `nombre`, `descripcion`, `es_final`) VALUES
+(1, 'EMITIDA', 0, 'Emitida', 'Factura emitida aún no procesada por SII', 0),
+(2, 'PEND_ENVIO_SII', 1, 'Pendiente envío SII', 'Pendiente de envío o recepción por el SII', 0),
+(3, 'ACEPTADA_SII', 2, 'Aceptada por SII', 'Documento recibido y aceptado por el SII', 1),
+(4, 'RECHAZADA_SII', 3, 'Rechazada por SII', 'Documento rechazado por el SII', 1),
+(5, 'ANULADA', 4, 'Anulada', 'Factura anulada, sin efecto tributario/comercial', 1);
 
 -- --------------------------------------------------------
 
@@ -303,6 +304,7 @@ CREATE TABLE `vw_factura_completa` (
 `afecto_iva` tinyint(1)
 ,`cantidad` decimal(18,4)
 ,`codigo_condicion_pago` tinyint
+,`codigo_estado_sii` smallint
 ,`cliente_ciudad` varchar(80)
 ,`cliente_comuna` varchar(80)
 ,`cliente_direccion` varchar(200)
@@ -327,6 +329,7 @@ CREATE TABLE `vw_factura_completa` (
 ,`emisor_telefono` varchar(30)
 ,`es_final` tinyint(1)
 ,`estado_codigo` varchar(20)
+,`codigo_sii` smallint
 ,`estado_descripcion` varchar(200)
 ,`estado_nombre` varchar(50)
 ,`fecha_actualizacion` timestamp
@@ -372,7 +375,7 @@ CREATE TABLE `vw_factura_completa` (
 --
 DROP TABLE IF EXISTS `vw_factura_completa`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `vw_factura_completa`  AS SELECT `f`.`id_factura` AS `id_factura`, `f`.`id_tipo_detalle` AS `id_tipo_detalle`, `td`.`codigo` AS `tipo_detalle_codigo`, `td`.`nombre` AS `tipo_detalle_nombre`, `f`.`folio` AS `folio`, `f`.`fecha_emision` AS `fecha_emision`, `f`.`moneda` AS `moneda`, `f`.`id_condicion_pago` AS `id_condicion_pago`, `cp`.`codigo` AS `codigo_condicion_pago`, `cp`.`nombre` AS `condicion_pago_nombre`, `f`.`fecha_vencimiento` AS `fecha_vencimiento`, `f`.`neto_afecto` AS `neto_afecto`, `f`.`neto_exento` AS `neto_exento`, `f`.`otros_cargos` AS `otros_cargos`, `f`.`impuesto_especifico` AS `impuesto_especifico`, `f`.`monto_iva` AS `monto_iva`, `f`.`total` AS `total`, `f`.`fecha_creacion` AS `fecha_creacion`, `f`.`fecha_actualizacion` AS `fecha_actualizacion`, `fp`.`id_forma_pago` AS `id_forma_pago`, `fp`.`codigo` AS `forma_pago_codigo`, `fp`.`nombre` AS `forma_pago_nombre`, `fp`.`descripcion` AS `forma_pago_descripcion`, `ef`.`id_estado_factura` AS `id_estado_factura`, `ef`.`codigo` AS `estado_codigo`, `ef`.`nombre` AS `estado_nombre`, `ef`.`descripcion` AS `estado_descripcion`, `ef`.`es_final` AS `es_final`, `e`.`id_emisor` AS `id_emisor`, `e`.`rut` AS `emisor_rut`, `e`.`razon_social` AS `emisor_razon_social`, `e`.`giro` AS `emisor_giro`, `e`.`direccion` AS `emisor_direccion`, `e`.`comuna` AS `emisor_comuna`, `e`.`ciudad` AS `emisor_ciudad`, `e`.`telefono` AS `emisor_telefono`, `e`.`email` AS `emisor_email`, `c`.`id_cliente` AS `id_cliente`, `c`.`rut` AS `cliente_rut`, `c`.`razon_social` AS `cliente_razon_social`, `c`.`giro` AS `cliente_giro`, `c`.`direccion` AS `cliente_direccion`, `c`.`comuna` AS `cliente_comuna`, `c`.`ciudad` AS `cliente_ciudad`, `c`.`telefono` AS `cliente_telefono`, `c`.`email` AS `cliente_email`, `fd`.`id_detalle` AS `id_detalle`, `fd`.`nro_linea` AS `nro_linea`, `fd`.`codigo_item` AS `codigo_item`, `fd`.`descripcion` AS `detalle_descripcion`, `fd`.`cantidad` AS `cantidad`, `fd`.`unidad` AS `unidad`, `fd`.`precio_unitario` AS `precio_unitario`, `fd`.`descuento_porcentaje` AS `descuento_porcentaje`, `fd`.`descuento_monto` AS `descuento_monto`, `fd`.`recargo_monto` AS `recargo_monto`, `fd`.`afecto_iva` AS `afecto_iva`, `fd`.`neto_linea` AS `neto_linea`, `fi`.`codigo_impuesto` AS `codigo_impuesto`, `fi`.`tasa` AS `impuesto_tasa`, `fi`.`monto` AS `impuesto_monto`, `fr`.`tipo_doc_ref` AS `tipo_doc_ref`, `fr`.`folio_ref` AS `folio_ref`, `fr`.`fecha_ref` AS `fecha_ref`, `fr`.`razon_ref` AS `razon_ref` FROM (((((((( `factura` `f` join `emisor` `e` on((`e`.`id_emisor` = `f`.`id_emisor`))) join `cliente` `c` on((`c`.`id_cliente` = `f`.`id_cliente`))) join `forma_pago` `fp` on((`fp`.`id_forma_pago` = `f`.`id_forma_pago`))) join `estado_factura` `ef` on((`ef`.`id_estado_factura` = `f`.`id_estado_factura`))) join `tipo_detalle` `td` on((`td`.`id_tipo_detalle` = `f`.`id_tipo_detalle`))) join `condicion_pago` `cp` on((`cp`.`id_condicion_pago` = `f`.`id_condicion_pago`))) left join `factura_detalle` `fd` on((`fd`.`id_factura` = `f`.`id_factura`))) left join `factura_impuesto` `fi` on((`fi`.`id_factura` = `f`.`id_factura`))) left join `factura_referencia` `fr` on((`fr`.`id_factura` = `f`.`id_factura`))) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `vw_factura_completa`  AS SELECT `f`.`id_factura` AS `id_factura`, `f`.`id_tipo_detalle` AS `id_tipo_detalle`, `td`.`codigo` AS `tipo_detalle_codigo`, `td`.`nombre` AS `tipo_detalle_nombre`, `f`.`folio` AS `folio`, `f`.`fecha_emision` AS `fecha_emision`, `f`.`moneda` AS `moneda`, `f`.`id_condicion_pago` AS `id_condicion_pago`, `cp`.`codigo` AS `codigo_condicion_pago`, `cp`.`nombre` AS `condicion_pago_nombre`, `f`.`fecha_vencimiento` AS `fecha_vencimiento`, `f`.`neto_afecto` AS `neto_afecto`, `f`.`neto_exento` AS `neto_exento`, `f`.`otros_cargos` AS `otros_cargos`, `f`.`impuesto_especifico` AS `impuesto_especifico`, `f`.`monto_iva` AS `monto_iva`, `f`.`total` AS `total`, `f`.`fecha_creacion` AS `fecha_creacion`, `f`.`fecha_actualizacion` AS `fecha_actualizacion`, `fp`.`id_forma_pago` AS `id_forma_pago`, `fp`.`codigo` AS `forma_pago_codigo`, `fp`.`nombre` AS `forma_pago_nombre`, `fp`.`descripcion` AS `forma_pago_descripcion`, `ef`.`id_estado_factura` AS `id_estado_factura`, `ef`.`codigo` AS `estado_codigo`, `ef`.`codigo_sii` AS `codigo_estado_sii`, `ef`.`nombre` AS `estado_nombre`, `ef`.`descripcion` AS `estado_descripcion`, `ef`.`es_final` AS `es_final`, `e`.`id_emisor` AS `id_emisor`, `e`.`rut` AS `emisor_rut`, `e`.`razon_social` AS `emisor_razon_social`, `e`.`giro` AS `emisor_giro`, `e`.`direccion` AS `emisor_direccion`, `e`.`comuna` AS `emisor_comuna`, `e`.`ciudad` AS `emisor_ciudad`, `e`.`telefono` AS `emisor_telefono`, `e`.`email` AS `emisor_email`, `c`.`id_cliente` AS `id_cliente`, `c`.`rut` AS `cliente_rut`, `c`.`razon_social` AS `cliente_razon_social`, `c`.`giro` AS `cliente_giro`, `c`.`direccion` AS `cliente_direccion`, `c`.`comuna` AS `cliente_comuna`, `c`.`ciudad` AS `cliente_ciudad`, `c`.`telefono` AS `cliente_telefono`, `c`.`email` AS `cliente_email`, `fd`.`id_detalle` AS `id_detalle`, `fd`.`nro_linea` AS `nro_linea`, `fd`.`codigo_item` AS `codigo_item`, `fd`.`descripcion` AS `detalle_descripcion`, `fd`.`cantidad` AS `cantidad`, `fd`.`unidad` AS `unidad`, `fd`.`precio_unitario` AS `precio_unitario`, `fd`.`descuento_porcentaje` AS `descuento_porcentaje`, `fd`.`descuento_monto` AS `descuento_monto`, `fd`.`recargo_monto` AS `recargo_monto`, `fd`.`afecto_iva` AS `afecto_iva`, `fd`.`neto_linea` AS `neto_linea`, `fi`.`codigo_impuesto` AS `codigo_impuesto`, `fi`.`tasa` AS `impuesto_tasa`, `fi`.`monto` AS `impuesto_monto`, `fr`.`tipo_doc_ref` AS `tipo_doc_ref`, `fr`.`folio_ref` AS `folio_ref`, `fr`.`fecha_ref` AS `fecha_ref`, `fr`.`razon_ref` AS `razon_ref` FROM (((((((( `factura` `f` join `emisor` `e` on((`e`.`id_emisor` = `f`.`id_emisor`))) join `cliente` `c` on((`c`.`id_cliente` = `f`.`id_cliente`))) join `forma_pago` `fp` on((`fp`.`id_forma_pago` = `f`.`id_forma_pago`))) join `estado_factura` `ef` on((`ef`.`id_estado_factura` = `f`.`id_estado_factura`))) join `tipo_detalle` `td` on((`td`.`id_tipo_detalle` = `f`.`id_tipo_detalle`))) join `condicion_pago` `cp` on((`cp`.`id_condicion_pago` = `f`.`id_condicion_pago`))) left join `factura_detalle` `fd` on((`fd`.`id_factura` = `f`.`id_factura`))) left join `factura_impuesto` `fi` on((`fi`.`id_factura` = `f`.`id_factura`))) left join `factura_referencia` `fr` on((`fr`.`id_factura` = `f`.`id_factura`))) ;
 
 --
 -- Índices para tablas volcadas
