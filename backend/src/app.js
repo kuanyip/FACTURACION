@@ -10,6 +10,7 @@ const emisorRoutes = require('./routes/emisor.routes');
 const formaPagoRoutes = require('./routes/forma-pago.routes');
 const estadoFacturaRoutes = require('./routes/estado-factura.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
+const condicionPagoRoutes = require('./routes/condicion-pago.routes');
 const authMiddleware = require('./middleware/auth');
 const { version } = require('../package.json');
 
@@ -41,6 +42,7 @@ app.use('/api/clientes', authMiddleware, clienteRoutes);
 app.use('/api/facturas', authMiddleware, facturaRoutes);
 app.use('/api/emisores', authMiddleware, emisorRoutes);
 app.use('/api/formas-pago', authMiddleware, formaPagoRoutes);
+app.use('/api/condiciones-pago', authMiddleware, condicionPagoRoutes);
 app.use('/api/estados-factura', authMiddleware, estadoFacturaRoutes);
 app.use('/api/usuarios', authMiddleware, usuarioRoutes);
 
@@ -49,6 +51,7 @@ app.use('/clientes', authMiddleware, clienteRoutes);
 app.use('/facturas', authMiddleware, facturaRoutes);
 app.use('/emisores', authMiddleware, emisorRoutes);
 app.use('/formas-pago', authMiddleware, formaPagoRoutes);
+app.use('/condiciones-pago', authMiddleware, condicionPagoRoutes);
 app.use('/estados-factura', authMiddleware, estadoFacturaRoutes);
 app.use('/usuarios', authMiddleware, usuarioRoutes);
 

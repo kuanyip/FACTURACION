@@ -11,6 +11,7 @@
     { "key": "facturaId", "value": "1", "type": "default" },
     { "key": "emisorId", "value": "1", "type": "default" },
     { "key": "formaPagoId", "value": "1", "type": "default" },
+    { "key": "condicionPagoId", "value": "1", "type": "default" },
     { "key": "estadoFacturaId", "value": "1", "type": "default" }
   ],
   "item": [
@@ -147,6 +148,108 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
             "url": { "raw": "{{base_url}}/formas-pago/{{formaPagoId}}", "host": ["{{base_url}}"], "path": ["formas-pago", "{{formaPagoId}}"] }
           },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Condiciones de pago",
+      "item": [
+        {
+          "name": "Listar condiciones de pago",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": { "raw": "{{base_url}}/condiciones-pago", "host": ["{{base_url}}"], "path": ["condiciones-pago"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Datos es array', () => Array.isArray(json.data));",
+                  "if (json.data.length) { pm.collectionVariables.set('condicionPagoId', json.data[0].id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Crear condicion de pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": 3,\n  \"nombre\": \"Pago en 30 dias\",\n  \"descripcion\": \"Crédito 30 días\"\n}" },
+            "url": { "raw": "{{base_url}}/condiciones-pago", "host": ["{{base_url}}"], "path": ["condiciones-pago"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.code === 201);",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('condicionPagoId', json.data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Actualizar condicion de pago",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Pago en 45 dias\"\n}" },
+            "url": {
+              "raw": "{{base_url}}/condiciones-pago/{{condicionPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["condiciones-pago", "{{condicionPagoId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('200 OK', () => pm.response.code === 200);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Eliminar condicion de pago",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+            "url": {
+              "raw": "{{base_url}}/condiciones-pago/{{condicionPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["condiciones-pago", "{{condicionPagoId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('204 No Content', () => pm.response.code === 204);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         }
       ]
@@ -358,7 +461,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tipoDte\": 33,\n  \"folio\": 12345,\n  \"fechaEmision\": \"2025-11-18\",\n  \"moneda\": \"CLP\",\n  \"emisorId\": {{emisorId}},\n  \"clienteId\": {{clienteId}},\n  \"condicionPago\": \"CONTADO\",\n  \"formaPagoId\": {{formaPagoId}},\n  \"fechaVencimiento\": \"2025-12-02\",\n  \"ordenCompra\": \"OC-123\",\n  \"netoAfecto\": 100000,\n  \"netoExento\": 0,\n  \"otrosCargos\": 0,\n  \"impuestoEspecifico\": 0,\n  \"montoIva\": 19000,\n  \"total\": 119000,\n  \"estadoFacturaId\": {{estadoFacturaId}},\n  \"detalles\": [\n    {\n      \"descripcion\": \"Servicio mensual\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 100000,\n      \"descuentoPorcentaje\": 0,\n      \"subtotal\": 100000\n    }\n  ],\n  \"impuestos\": [\n    {\n      \"codigoImpuesto\": \"IVA\",\n      \"descripcion\": \"IVA 19%\",\n      \"monto\": 19000\n    }\n  ],\n  \"referencias\": [\n    {\n      \"tipoDoc\": \"OC\",\n      \"folioRef\": \"OC-123\",\n      \"fechaRef\": \"2025-11-01\",\n      \"motivo\": \"Orden de compra\"\n    }\n  ]\n}"
+              "raw": "{\n  \"tipoDetalleId\": 33,\n  \"folio\": 12345,\n  \"fechaEmision\": \"2025-11-18\",\n  \"moneda\": \"CLP\",\n  \"emisorId\": {{emisorId}},\n  \"clienteId\": {{clienteId}},\n  \"condicionPagoId\": {{condicionPagoId}},\n  \"formaPagoId\": {{formaPagoId}},\n  \"fechaVencimiento\": \"2025-12-02\",\n  \"ordenCompra\": \"OC-123\",\n  \"netoAfecto\": 100000,\n  \"netoExento\": 0,\n  \"otrosCargos\": 0,\n  \"impuestoEspecifico\": 0,\n  \"montoIva\": 19000,\n  \"total\": 119000,\n  \"estadoFacturaId\": {{estadoFacturaId}},\n  \"detalles\": [\n    {\n      \"descripcion\": \"Servicio mensual\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 100000,\n      \"descuentoPorcentaje\": 0,\n      \"subtotal\": 100000\n    }\n  ],\n  \"impuestos\": [\n    {\n      \"codigoImpuesto\": \"IVA\",\n      \"tasa\": 19,\n      \"monto\": 19000\n    }\n  ],\n  \"referencias\": [\n    {\n      \"tipoDoc\": 52,\n      \"folioRef\": \"OC-123\",\n      \"fechaRef\": \"2025-11-01\",\n      \"motivo\": \"Orden de compra\"\n    }\n  ]\n}"
             },
             "url": { "raw": "{{base_url}}/facturas", "host": ["{{base_url}}"], "path": ["facturas"] }
           },

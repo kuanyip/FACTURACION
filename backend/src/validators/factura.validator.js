@@ -1,6 +1,5 @@
 const { z } = require('zod');
 
-const enumCondicion = ['CONTADO', 'CREDITO'];
 const dateSchema = (message) =>
   z
     .string()
@@ -37,6 +36,7 @@ const detalleSchema = z
 const impuestoSchema = z
   .object({
     codigoImpuesto: z.string().trim().min(1, 'Codigo requerido').max(20),
+    tasa: decimalSchema('Tasa invalida').optional(),
     descripcion: z.string().trim().max(120).optional(),
     monto: decimalSchema('Monto invalido')
   })
@@ -53,13 +53,13 @@ const referenciaSchema = z
 
 const baseFacturaSchema = z
   .object({
-    tipoDte: z.coerce.number().int('Tipo DTE invalido'),
+    tipoDetalleId: z.coerce.number().int('Tipo detalle invalido'),
     folio: z.coerce.number().int('Folio invalido'),
     fechaEmision: dateSchema('Fecha de emision invalida'),
     moneda: z.string().trim().length(3, 'Moneda invalida').default('CLP'),
     emisorId: z.coerce.number().int('Emisor invalido').positive('Emisor invalido'),
     clienteId: z.coerce.number().int('Cliente invalido').positive('Cliente invalido'),
-    condicionPago: z.enum(enumCondicion, { invalid_type_error: 'Condicion de pago invalida' }).default('CONTADO'),
+    condicionPagoId: z.coerce.number().int('Condicion de pago invalida').positive('Condicion de pago invalida'),
     formaPagoId: z.coerce.number().int('Forma de pago invalida').positive('Forma de pago invalida'),
     fechaVencimiento: dateSchema('Fecha de vencimiento invalida').optional(),
     ordenCompra: z.string().trim().max(50).optional(),

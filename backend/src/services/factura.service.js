@@ -4,13 +4,17 @@ const createHttpError = require('../utils/httpError');
 const facturaBaseSelect = `
   SELECT
     f.id_factura AS id,
-    f.tipo_dte AS tipoDte,
+    f.id_tipo_detalle AS tipoDetalleId,
+    td.codigo AS tipoDetalleCodigo,
+    td.nombre AS tipoDetalleNombre,
     f.folio,
     f.fecha_emision AS fechaEmision,
     f.moneda,
     f.id_emisor AS emisorId,
     f.id_cliente AS clienteId,
-    f.condicion_pago AS condicionPago,
+    f.id_condicion_pago AS condicionPagoId,
+    cp.codigo AS condicionPagoCodigo,
+    cp.nombre AS condicionPagoNombre,
     f.id_forma_pago AS formaPagoId,
     f.fecha_vencimiento AS fechaVencimiento,
     f.orden_compra AS ordenCompra,
@@ -36,6 +40,8 @@ const facturaBaseSelect = `
   LEFT JOIN emisor e ON e.id_emisor = f.id_emisor
   LEFT JOIN estado_factura ef ON ef.id_estado_factura = f.id_estado_factura
   LEFT JOIN forma_pago fp ON fp.id_forma_pago = f.id_forma_pago
+  LEFT JOIN tipo_detalle td ON td.id_tipo_detalle = f.id_tipo_detalle
+  LEFT JOIN condicion_pago cp ON cp.id_condicion_pago = f.id_condicion_pago
 `;
 
 const calcularSubtotal = (detalle) => {
@@ -60,7 +66,7 @@ const fetchDetalles = async (conn, facturaId) => {
         precio_unitario AS precioUnitario,
         descuento_porcentaje AS descuentoPorcentaje,
         descuento_monto AS descuentoMonto,
-        subtotal
+        neto_linea AS subtotal
      FROM factura_detalle
      WHERE id_factura = ?
      ORDER BY nro_linea ASC`,
@@ -71,7 +77,7 @@ const fetchDetalles = async (conn, facturaId) => {
 
 const fetchImpuestos = async (conn, facturaId) => {
   const [rows] = await conn.execute(
-    `SELECT id_impuesto AS id, id_factura AS facturaId, codigo_impuesto AS codigoImpuesto, descripcion, monto
+    `SELECT id_impuesto AS id, id_factura AS facturaId, codigo_impuesto AS codigoImpuesto, tasa, monto
      FROM factura_impuesto
      WHERE id_factura = ?`,
     [facturaId]
@@ -84,10 +90,10 @@ const fetchReferencias = async (conn, facturaId) => {
     `SELECT
         id_referencia AS id,
         id_factura AS facturaId,
-        tipo_doc AS tipoDoc,
+        tipo_doc_ref AS tipoDoc,
         folio_ref AS folioRef,
         fecha_ref AS fechaRef,
-        motivo
+        razon_ref AS motivo
      FROM factura_referencia
      WHERE id_factura = ?`,
     [facturaId]
@@ -152,7 +158,7 @@ const insertarDetalles = async (conn, facturaId, detalles = []) => {
   if (!detalles?.length) return;
   const insertSql = `
     INSERT INTO factura_detalle
-      (id_factura, nro_linea, descripcion, cantidad, precio_unitario, descuento_porcentaje, descuento_monto, subtotal)
+      (id_factura, nro_linea, descripcion, cantidad, precio_unitario, descuento_porcentaje, descuento_monto, neto_linea)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
   for (let i = 0; i < detalles.length; i++) {
@@ -174,18 +180,18 @@ const insertarDetalles = async (conn, facturaId, detalles = []) => {
 const insertarImpuestos = async (conn, facturaId, impuestos = []) => {
   if (!impuestos?.length) return;
   const insertSql = `
-    INSERT INTO factura_impuesto (id_factura, codigo_impuesto, descripcion, monto)
+    INSERT INTO factura_impuesto (id_factura, codigo_impuesto, tasa, monto)
     VALUES (?, ?, ?, ?)
   `;
   for (const imp of impuestos) {
-    await conn.execute(insertSql, [facturaId, imp.codigoImpuesto, imp.descripcion ?? null, imp.monto]);
+    await conn.execute(insertSql, [facturaId, imp.codigoImpuesto, imp.tasa ?? 0, imp.monto]);
   }
 };
 
 const insertarReferencias = async (conn, facturaId, referencias = []) => {
   if (!referencias?.length) return;
   const insertSql = `
-    INSERT INTO factura_referencia (id_factura, tipo_doc, folio_ref, fecha_ref, motivo)
+    INSERT INTO factura_referencia (id_factura, tipo_doc_ref, folio_ref, fecha_ref, razon_ref)
     VALUES (?, ?, ?, ?, ?)
   `;
   for (const ref of referencias) {
@@ -208,16 +214,18 @@ const crearFactura = async (data) => {
     await ensureExists(conn, 'cliente', 'id_cliente', data.clienteId, 'Cliente no encontrado');
     await ensureExists(conn, 'forma_pago', 'id_forma_pago', data.formaPagoId, 'Forma de pago no encontrada');
     await ensureExists(conn, 'estado_factura', 'id_estado_factura', data.estadoFacturaId, 'Estado de factura no encontrado');
+    await ensureExists(conn, 'tipo_detalle', 'id_tipo_detalle', data.tipoDetalleId, 'Tipo de detalle no encontrado');
+    await ensureExists(conn, 'condicion_pago', 'id_condicion_pago', data.condicionPagoId, 'Condicion de pago no encontrada');
 
     const insertSql = `
       INSERT INTO factura (
-        tipo_dte,
+        id_tipo_detalle,
         folio,
         fecha_emision,
         moneda,
         id_emisor,
         id_cliente,
-        condicion_pago,
+        id_condicion_pago,
         id_forma_pago,
         fecha_vencimiento,
         orden_compra,
@@ -234,13 +242,13 @@ const crearFactura = async (data) => {
     `;
 
     const [result] = await conn.execute(insertSql, [
-      data.tipoDte,
+      data.tipoDetalleId,
       data.folio,
       data.fechaEmision,
       data.moneda || 'CLP',
       data.emisorId,
       data.clienteId,
-      data.condicionPago || 'CONTADO',
+      data.condicionPagoId,
       data.formaPagoId,
       data.fechaVencimiento || null,
       data.ordenCompra || null,
@@ -293,15 +301,21 @@ const actualizarFactura = async (id, data) => {
     if (data.estadoFacturaId !== undefined) {
       await ensureExists(conn, 'estado_factura', 'id_estado_factura', data.estadoFacturaId, 'Estado de factura no encontrado');
     }
+    if (data.tipoDetalleId !== undefined) {
+      await ensureExists(conn, 'tipo_detalle', 'id_tipo_detalle', data.tipoDetalleId, 'Tipo de detalle no encontrado');
+    }
+    if (data.condicionPagoId !== undefined) {
+      await ensureExists(conn, 'condicion_pago', 'id_condicion_pago', data.condicionPagoId, 'Condicion de pago no encontrada');
+    }
 
     const columnas = {
-      tipoDte: 'tipo_dte',
+      tipoDetalleId: 'id_tipo_detalle',
       folio: 'folio',
       fechaEmision: 'fecha_emision',
       moneda: 'moneda',
       emisorId: 'id_emisor',
       clienteId: 'id_cliente',
-      condicionPago: 'condicion_pago',
+      condicionPagoId: 'id_condicion_pago',
       formaPagoId: 'id_forma_pago',
       fechaVencimiento: 'fecha_vencimiento',
       ordenCompra: 'orden_compra',
