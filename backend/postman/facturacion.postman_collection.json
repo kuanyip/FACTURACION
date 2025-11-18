@@ -32,6 +32,20 @@
               "path": ["auth", "login"]
             }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Token presente', () => json.data && json.data.token);",
+                  "pm.collectionVariables.set('token', json.data.token || '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         }
       ]
@@ -259,6 +273,20 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
             "url": { "raw": "{{base_url}}/facturas", "host": ["{{base_url}}"], "path": ["facturas"] }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Datos es array', () => Array.isArray(json.data));",
+                  "if (json.data.length) { pm.collectionVariables.set('facturaId', json.data[0].id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         },
         {
@@ -274,6 +302,50 @@
               "path": ["facturas", "estado", "{{estadoFacturaId}}"]
             }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Datos es array', () => Array.isArray(json.data));",
+                  "pm.test('Filtro por estado aplicado', () => json.data.every(f => String(f.estadoFacturaId) === String(pm.collectionVariables.get('estadoFacturaId'))));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Obtener factura por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/facturas/{{facturaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["facturas", "{{facturaId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Incluye detalles', () => Array.isArray(json.data.detalles));",
+                  "pm.test('Incluye impuestos', () => Array.isArray(json.data.impuestos));",
+                  "pm.test('Incluye referencias', () => Array.isArray(json.data.referencias));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         },
         {
@@ -290,6 +362,20 @@
             },
             "url": { "raw": "{{base_url}}/facturas", "host": ["{{base_url}}"], "path": ["facturas"] }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.code === 201);",
+                  "const json = pm.response.json();",
+                  "pm.test('Factura creada tiene ID', () => json.data && json.data.id);",
+                  "pm.collectionVariables.set('facturaId', json.data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         },
         {
@@ -310,6 +396,19 @@
               "path": ["facturas", "{{facturaId}}"]
             }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.code === 200);",
+                  "const json = pm.response.json();",
+                  "pm.test('Estado actualizado', () => String(json.data.estadoFacturaId || '') === String(pm.request.body ? 2 : json.data.estadoFacturaId));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         },
         {
@@ -323,6 +422,15 @@
               "path": ["facturas", "{{facturaId}}"]
             }
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('204 No Content', () => pm.response.code === 204);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         }
       ]

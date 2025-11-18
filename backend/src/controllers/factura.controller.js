@@ -1,4 +1,5 @@
 const asyncHandler = require('../utils/asyncHandler');
+const createHttpError = require('../utils/httpError');
 const facturaService = require('../services/factura.service');
 
 module.exports = {
@@ -11,6 +12,15 @@ module.exports = {
     const { estadoId } = req.validated.params;
     const facturas = await facturaService.buscarPorEstado(estadoId);
     res.json({ data: facturas });
+  }),
+
+  obtener: asyncHandler(async (req, res) => {
+    const { params } = req.validated;
+    const factura = await facturaService.buscarPorId(params.id);
+    if (!factura) {
+      throw createHttpError(404, 'Factura no encontrada');
+    }
+    res.json({ data: factura });
   }),
 
   crear: asyncHandler(async (req, res) => {

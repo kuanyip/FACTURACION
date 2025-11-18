@@ -144,6 +144,10 @@ const buscarPorEstado = async (estadoId) => {
   return rows;
 };
 
+const buscarPorId = async (id) => {
+  return getFacturaById(id, true);
+};
+
 const insertarDetalles = async (conn, facturaId, detalles = []) => {
   if (!detalles?.length) return;
   const insertSql = `
@@ -378,6 +382,7 @@ const eliminarFactura = async (id) => {
 module.exports = {
   buscarTodas,
   buscarPorEstado,
+  buscarPorId,
   crearFactura,
   actualizarFactura,
   eliminarFactura,
