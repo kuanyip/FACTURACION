@@ -54,7 +54,7 @@ const getCustomerLabel = (customer) =>
           <select name="customerId" required>
             <option value="">Selecciona un cliente</option>
             {customers.map((customer) => (
-              <option value={customer.id} key={customer.id}>
+              <option value={customer.id} data-customer-id={customer.id}>
                 {getCustomerLabel(customer)}
               </option>
             ))}
@@ -80,17 +80,17 @@ const getCustomerLabel = (customer) =>
         <label>Estatus</label>
         <select name="status">
           {statuses.map((status) => (
-            <option value={status} key={status}>{status}</option>
+            <option value={status}>{status}</option>
           ))}
         </select>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
         <div>
-          <label>Fecha de emision</label>
+          <label>Emision</label>
           <input name="issueDate" type="date" required />
         </div>
         <div>
-          <label>Fecha de vencimiento</label>
+          <label>Vencimiento</label>
           <input name="dueDate" type="date" required />
         </div>
       </div>
