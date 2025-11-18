@@ -71,8 +71,8 @@ const fallbackInvoices: Invoice[] = [
 export async function getDashboardData(): Promise<DashboardData> {
   try {
     const [customersResponse, invoicesResponse] = await Promise.all([
-      request<{ data: Customer[] }>('/customers'),
-      request<{ data: Invoice[] }>('/invoices')
+      request<{ data: Customer[] }>('/clientes'),
+      request<{ data: Invoice[] }>('/facturas')
     ]);
     const invoices = invoicesResponse.data;
     const customers = customersResponse.data;

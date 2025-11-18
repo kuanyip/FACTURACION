@@ -1,7 +1,7 @@
 ﻿require('dotenv').config();
 const app = require('./app');
 const { ensureTables, pool } = require('./config/db');
-const { ensureAdminUser } = require('./services/user.service');
+const { ensureAdminUser } = require('./services/usuario.service');
 
 const PORT = process.env.PORT || 3800;
 

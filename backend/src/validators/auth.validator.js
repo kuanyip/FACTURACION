@@ -1,6 +1,6 @@
 const { z } = require('zod');
 
-const roles = ['admin', 'staff'];
+const roles = ['admin', 'revisor', 'digitador'];
 
 const registerBodySchema = z
   .object({

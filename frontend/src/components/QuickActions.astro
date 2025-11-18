@@ -1,14 +1,26 @@
 ﻿---
 const apiBase = Astro.props.apiBase;
+const customers = Astro.props.customers || [];
 const statuses = ['draft', 'sent', 'paid', 'overdue'];
+const hasCustomers = customers.length > 0;
+const getCustomerLabel = (customer) =>
+  customer.name || customer.razonSocial || customer.razon_social || customer.email || `Cliente ${customer.id}`;
 ---
 <section class="card space-y-6">
-  <div>
-    <h3 class="text-lg font-semibold text-slate-900">Acciones rapidas</h3>
-    <p class="text-sm text-slate-500">Crea clientes e impacta nuevas facturas sin salir del dashboard.</p>
+  <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-slate-900">Acciones rapidas</h3>
+      <p class="text-sm text-slate-500">Se habilitan según el rol guardado en el navegador.</p>
+    </div>
+    <span
+      class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+      data-role-chip
+    >
+      Rol: visitante
+    </span>
   </div>
   <div class="grid gap-6 md:grid-cols-2">
-    <form class="space-y-3" data-action="/customers">
+    <form class="space-y-3" data-action="/clientes" data-permission="create">
       <h4 class="text-sm font-semibold text-slate-700">Nuevo cliente</h4>
       <div>
         <label>Nombre completo</label>
@@ -34,11 +46,27 @@ const statuses = ['draft', 'sent', 'paid', 'overdue'];
       <button type="submit">Guardar cliente</button>
     </form>
 
-    <form class="space-y-3" data-action="/invoices">
+    <form class="space-y-3" data-action="/facturas" data-permission="create">
       <h4 class="text-sm font-semibold text-slate-700">Nueva factura</h4>
       <div>
-        <label>ID del cliente</label>
-        <input name="customerId" type="number" min="1" placeholder="1" required />
+        <label>Cliente</label>
+        {hasCustomers ? (
+          <select name="customerId" required>
+            <option value="">Selecciona un cliente</option>
+            {customers.map((customer) => (
+              <option value={customer.id} key={customer.id}>
+                {getCustomerLabel(customer)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <>
+            <input name="customerId" type="number" min="1" placeholder="1" required />
+            <p class="text-xs text-slate-500 text-amber-600">
+              Agrega un cliente primero para verlo en la lista.
+            </p>
+          </>
+        )}
       </div>
       <div>
         <label>Descripcion</label>
@@ -70,10 +98,28 @@ const statuses = ['draft', 'sent', 'paid', 'overdue'];
       <button type="submit">Registrar factura</button>
     </form>
   </div>
+
+  <div class="grid gap-6 md:grid-cols-2">
+    <form class="space-y-3" data-action-status data-permission="status">
+      <h4 class="text-sm font-semibold text-slate-700">Actualizar estado de factura</h4>
+      <div>
+        <label>ID de la factura</label>
+        <input name="invoiceId" type="number" min="1" placeholder="10" required />
+      </div>
+      <div>
+        <label>ID del estado (ver /api/estados-factura)</label>
+        <input name="estadoFacturaId" type="number" min="1" placeholder="1" required />
+      </div>
+      <p class="text-xs text-slate-500" data-feedback="status">Solo administradores y revisores.</p>
+      <button type="submit">Cambiar estado</button>
+    </form>
+  </div>
 </section>
 
 <script type="module" define:vars={{ apiBase }}>
   const forms = document.querySelectorAll('form[data-action]');
+  const statusForm = document.querySelector('[data-action-status]');
+  const roleChip = document.querySelector('[data-role-chip]');
   const jsonFields = ['customerId', 'total'];
 
   const getAuthHeaders = () => {
@@ -85,7 +131,32 @@ const statuses = ['draft', 'sent', 'paid', 'overdue'];
     return headers;
   };
 
+  const session = JSON.parse(localStorage.getItem('authUser') || '{}');
+  const role = session.role || 'digitador';
+  const canCreate = ['admin', 'digitador'].includes(role);
+  const canUpdateStatus = ['admin', 'revisor'].includes(role);
+
+  if (roleChip) {
+    roleChip.textContent = `Rol: ${role}`;
+  }
+
+  const blockForm = (form, message) => {
+    form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+      el.setAttribute('disabled', 'true');
+    });
+    const feedback = form.querySelector('[data-feedback]');
+    if (feedback) {
+      feedback.textContent = message;
+      feedback.classList.add('text-amber-600');
+    }
+  };
+
   forms.forEach((form) => {
+    if (!canCreate && form.dataset.permission === 'create') {
+      blockForm(form, 'Disponible para administradores o digitadores.');
+      return;
+    }
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const feedback = form.querySelector('[data-feedback]');
@@ -125,4 +196,39 @@ const statuses = ['draft', 'sent', 'paid', 'overdue'];
       }
     });
   });
+
+  if (statusForm) {
+    if (!canUpdateStatus) {
+      blockForm(statusForm, 'Disponible para administradores o revisores.');
+    } else {
+      statusForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const feedback = statusForm.querySelector('[data-feedback]');
+        feedback.textContent = 'Actualizando estado...';
+        feedback.classList.remove('text-red-500', 'text-green-600');
+        const formData = new FormData(statusForm);
+        const invoiceId = Number(formData.get('invoiceId'));
+        const estadoFacturaId = Number(formData.get('estadoFacturaId'));
+        try {
+          const response = await fetch(`${apiBase}/facturas/${invoiceId}`, {
+            method: 'PUT',
+            headers: {
+              ...getAuthHeaders(),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ estadoFacturaId })
+          });
+          if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(body.message || 'No se pudo actualizar el estado');
+          }
+          feedback.textContent = 'Estado actualizado correctamente.';
+          feedback.classList.add('text-green-600');
+        } catch (error) {
+          feedback.textContent = error.message;
+          feedback.classList.add('text-red-500');
+        }
+      });
+    }
+  }
 </script>

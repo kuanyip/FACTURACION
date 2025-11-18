@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const roles = [
+  {
+    value: 'admin',
+    title: 'Administrador',
+    detail: 'Control total del sistema: usuarios, clientes, facturas y estados.'
+  },
+  {
+    value: 'revisor',
+    title: 'Revisor',
+    detail: 'Puede revisar y cambiar estados de facturas, sin crear usuarios.'
+  },
+  {
+    value: 'digitador',
+    title: 'Digitador',
+    detail: 'Puede ingresar clientes/facturas y consultar su propio trabajo.'
+  }
+];
+---
+<BaseLayout title="Usuarios y roles">
+  <div class="space-y-8">
+    <section class="card space-y-4">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-900">Perfiles y permisos</h2>
+        <p class="text-sm text-slate-500">Define el rol al crear usuarios para limitar lo que cada perfil puede hacer.</p>
+      </div>
+      <div class="grid gap-4 md:grid-cols-3">
+        {roles.map((role) => (
+          <article class="rounded-lg border border-slate-200 p-4" key={role.value}>
+            <p class="text-xs uppercase tracking-wide text-primary">{role.value}</p>
+            <h3 class="text-lg font-semibold text-slate-900">{role.title}</h3>
+            <p class="text-sm text-slate-600">{role.detail}</p>
+          </article>
+        ))}
+      </div>
+      <ul class="text-sm text-slate-600 list-disc space-y-1 pl-5">
+        <li>Administrador: puede crear/editar/borrar usuarios, clientes y facturas.</li>
+        <li>Revisor: enfocado en control de estados de factura y seguimiento de pagos.</li>
+        <li>Digitador: captura de datos y consulta de lo ingresado, sin mover estados.</li>
+      </ul>
+    </section>
+
+    <section class="card space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Crear usuario</h2>
+        <p class="text-sm text-slate-500">Requiere un token de administrador guardado en el navegador.</p>
+      </div>
+      <form class="grid gap-3 md:grid-cols-2" data-user-form>
+        <div>
+          <label>Nombre completo</label>
+          <input name="name" placeholder="Ana Perez" minlength="3" required />
+        </div>
+        <div>
+          <label>Correo</label>
+          <input type="email" name="email" placeholder="usuario@correo.com" required />
+        </div>
+        <div>
+          <label>Contraseña</label>
+          <input type="password" name="password" placeholder="Minimo 6 caracteres" minlength="6" required />
+        </div>
+        <div>
+          <label>Rol</label>
+          <select name="role" required>
+            {roles.map((role) => (
+              <option value={role.value} key={role.value}>{role.title}</option>
+            ))}
+          </select>
+        </div>
+        <div class="md:col-span-2 space-y-2">
+          <button type="submit">Crear usuario</button>
+          <p class="text-xs text-slate-500" data-user-feedback>El token se tomará de localStorage (AuthCard).</p>
+        </div>
+      </form>
+    </section>
+
+    <section class="card space-y-4">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-900">Consultar mi perfil</h2>
+        <p class="text-sm text-slate-500">Usa el token guardado para ver tu rol actual.</p>
+      </div>
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+        <button type="button" data-profile-btn>Consultar /auth/me</button>
+        <p class="text-sm text-slate-600" data-profile-output>Muestra tu nombre, correo y rol.</p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script type="module" define:vars={{ apiBase }}>
+  const form = document.querySelector('[data-user-form]');
+  const feedback = document.querySelector('[data-user-feedback]');
+  const profileBtn = document.querySelector('[data-profile-btn]');
+  const profileOutput = document.querySelector('[data-profile-output]');
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return { headers, token };
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const { headers, token } = getHeaders();
+    if (!token) {
+      feedback.textContent = 'Inicia sesión como administrador para crear usuarios.';
+      feedback.classList.remove('text-green-600');
+      feedback.classList.add('text-red-500');
+      return;
+    }
+    feedback.textContent = 'Creando usuario...';
+    feedback.classList.remove('text-red-500', 'text-green-600');
+    const formData = new FormData(form);
+    const body = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      password: formData.get('password'),
+      role: formData.get('role')
+    };
+    try {
+      const response = await fetch(`${apiBase}/auth/register`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo crear el usuario');
+      }
+      form.reset();
+      feedback.textContent = 'Usuario creado. Comparte las credenciales de manera segura.';
+      feedback.classList.add('text-green-600');
+    } catch (error) {
+      feedback.textContent = error.message;
+      feedback.classList.add('text-red-500');
+    }
+  });
+
+  profileBtn?.addEventListener('click', async () => {
+    const { headers, token } = getHeaders();
+    if (!token) {
+      profileOutput.textContent = 'Primero inicia sesión y guarda el token en el navegador.';
+      profileOutput.classList.add('text-red-500');
+      return;
+    }
+    profileOutput.textContent = 'Consultando perfil...';
+    profileOutput.classList.remove('text-red-500', 'text-green-600');
+    try {
+      const response = await fetch(`${apiBase}/auth/me`, { headers });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo consultar el perfil');
+      }
+      const { usuario } = await response.json();
+      profileOutput.textContent = `${usuario.name} (${usuario.email}) - rol: ${usuario.role}`;
+      profileOutput.classList.add('text-green-600');
+    } catch (error) {
+      profileOutput.textContent = error.message;
+      profileOutput.classList.add('text-red-500');
+    }
+  });
+</script>

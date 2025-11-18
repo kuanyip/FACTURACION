@@ -15,12 +15,12 @@ const pool = mysql.createPool({
 const ensureTables = async () => {
   // Solo garantizamos la tabla de usuarios para autenticacion del backend.
   await pool.execute(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS usuarios (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(120) NOT NULL,
       email VARCHAR(160) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
-      role ENUM('admin','staff') DEFAULT 'admin',
+      role ENUM('admin','revisor','digitador') DEFAULT 'digitador',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB
   `);

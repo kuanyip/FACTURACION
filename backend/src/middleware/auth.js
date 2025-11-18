@@ -11,7 +11,7 @@ module.exports = (req, res, next) => {
 
   try {
     const decoded = verifyToken(token);
-    req.user = decoded;
+    req.usuario = decoded;
     return next();
   } catch (error) {
     return next(createHttpError(401, 'Token invalido'));

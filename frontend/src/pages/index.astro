@@ -19,7 +19,7 @@ const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
     />
     <div class="grid gap-6 lg:grid-cols-2">
       <AuthCard apiBase={apiBase} />
-      <QuickActions apiBase={apiBase} />
+      <QuickActions apiBase={apiBase} customers={dashboard.customers} />
     </div>
     <RevenueChart invoices={dashboard.invoices} />
   </div>
