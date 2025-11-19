@@ -1,6 +1,14 @@
 ﻿---
 import '../styles/global.css';
+import Icon from '../components/Icon.astro';
+
 const { title = 'Panel de facturacion' } = Astro.props;
+const pathname = Astro.url.pathname || '/';
+const navItems = [
+  { href: '/', label: 'Dashboard', icon: 'chart' },
+  { href: '/usuarios', label: 'Usuarios', icon: 'user' },
+  { href: '/catalogos', label: 'Catalogos', icon: 'form' }
+];
 ---
 <html lang="es">
   <head>
@@ -8,16 +16,28 @@ const { title = 'Panel de facturacion' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-900">
-    <header class="px-4 py-6 shadow-sm bg-white">
-      <div class="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
+  <body class="min-h-screen text-slate-900">
+    <header class="px-4 py-6">
+      <div class="mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur md:flex-row md:items-center md:justify-between">
         <div>
-          <p class="text-sm uppercase tracking-wide text-primary">Sistema de facturacion</p>
-          <h1 class="text-2xl font-semibold text-slate-900">{title}</h1>
+          <p class="text-xs uppercase tracking-[0.4em] text-primary">Sistema de facturacion</p>
+          <h1 class="text-3xl font-semibold text-slate-900">{title}</h1>
         </div>
-        <nav class="flex gap-4 text-sm text-primary">
-          <a class="underline underline-offset-4" href="/">Dashboard</a>
-          <a class="underline underline-offset-4" href="/usuarios">Usuarios</a>
+        <nav class="flex flex-wrap gap-2 text-sm text-primary">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <a
+                class={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition ${
+                  isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'text-primary hover:bg-primary/10'
+                }`}
+                href={item.href}
+              >
+                <Icon name={item.icon} size={18} class={isActive ? 'text-white' : 'text-primary'} />
+                {item.label}
+              </a>
+            );
+          })}
         </nav>
       </div>
     </header>

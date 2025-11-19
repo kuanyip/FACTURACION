@@ -78,6 +78,39 @@ const roles = [
 
     <section class="card space-y-4">
       <div>
+        <h2 class="text-lg font-semibold text-slate-900">Usuarios registrados</h2>
+        <p class="text-sm text-slate-500">
+          Filtra por estado (activo/inactivo) y por perfil para auditar historicos sin perder el contexto de roles.
+        </p>
+      </div>
+      <form class="grid gap-3 md:grid-cols-2" data-user-filters>
+        <div>
+          <label>Estado</label>
+          <select data-filter-status>
+            <option value="all">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div>
+          <label>Perfil</label>
+          <select data-filter-role>
+            <option value="all">Todos los perfiles</option>
+            {roles.map((role) => (
+              <option value={role.value} key={role.value}>{role.title}</option>
+            ))}
+          </select>
+        </div>
+      </form>
+      <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+        <p data-user-list-status>Conectate con un token para consultar /usuarios.</p>
+        <button type="button" class="btn-outline" data-user-refresh>Actualizar listado</button>
+      </div>
+      <ul class="space-y-2" data-user-list></ul>
+    </section>
+
+    <section class="card space-y-4">
+      <div>
         <h2 class="text-lg font-semibold text-slate-900">Consultar mi perfil</h2>
         <p class="text-sm text-slate-500">Usa el token guardado para ver tu rol actual.</p>
       </div>
@@ -94,6 +127,12 @@ const roles = [
   const feedback = document.querySelector('[data-user-feedback]');
   const profileBtn = document.querySelector('[data-profile-btn]');
   const profileOutput = document.querySelector('[data-profile-output]');
+  const userList = document.querySelector('[data-user-list]');
+  const userListStatus = document.querySelector('[data-user-list-status]');
+  const userRefreshBtn = document.querySelector('[data-user-refresh]');
+  const statusFilter = document.querySelector('[data-filter-status]');
+  const roleFilter = document.querySelector('[data-filter-role]');
+  let cachedUsers = [];
 
   const getHeaders = () => {
     const token = localStorage.getItem('authToken');
@@ -102,6 +141,111 @@ const roles = [
       headers.Authorization = `Bearer ${token}`;
     }
     return { headers, token };
+  };
+
+  const normalizeStatus = (value) => {
+    if (!value) return 'activo';
+    if (typeof value === 'string' && value.toLowerCase().includes('inac')) {
+      return 'inactivo';
+    }
+    return value === 'inactivo' ? 'inactivo' : 'activo';
+  };
+
+  const setUserListStatus = (message, type = 'muted') => {
+    if (!userListStatus) return;
+    userListStatus.textContent = message;
+    userListStatus.classList.remove('text-red-500', 'text-green-600', 'text-slate-500');
+    if (type === 'error') {
+      userListStatus.classList.add('text-red-500');
+    } else if (type === 'success') {
+      userListStatus.classList.add('text-green-600');
+    } else {
+      userListStatus.classList.add('text-slate-500');
+    }
+  };
+
+  const renderUsers = (users = []) => {
+    if (!userList) return;
+    userList.innerHTML = '';
+    if (!users.length) {
+      const empty = document.createElement('li');
+      empty.className = 'rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500';
+      empty.textContent = 'Sin usuarios que coincidan con los filtros seleccionados.';
+      userList.appendChild(empty);
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    users.forEach((user) => {
+      const estado = normalizeStatus(user.status);
+      const item = document.createElement('li');
+      item.className =
+        'flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm md:flex-row md:items-center md:justify-between';
+      const info = document.createElement('div');
+      info.innerHTML = `<p class="text-sm font-semibold text-slate-900">${user.name} (#${user.id})</p>
+        <p class="text-xs text-slate-500">${user.email}</p>`;
+      const chips = document.createElement('div');
+      chips.className = 'flex flex-wrap gap-2 text-xs';
+      const roleChip = document.createElement('span');
+      roleChip.className = 'chip bg-primary/10 text-primary';
+      roleChip.textContent = user.role || 'sin rol';
+      const statusChip = document.createElement('span');
+      statusChip.className =
+        'chip ' + (estado === 'activo' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-600 text-white');
+      statusChip.textContent = estado;
+      chips.appendChild(roleChip);
+      chips.appendChild(statusChip);
+      item.appendChild(info);
+      item.appendChild(chips);
+      fragment.appendChild(item);
+    });
+    userList.appendChild(fragment);
+  };
+
+  const applyFilters = () => {
+    if (!cachedUsers.length) {
+      renderUsers([]);
+      return;
+    }
+    const statusValue = (statusFilter?.value || 'all').toLowerCase();
+    const roleValue = (roleFilter?.value || 'all').toLowerCase();
+    const filtered = cachedUsers.filter((user) => {
+      const normalizedStatus = normalizeStatus(user.status);
+      const matchesStatus = statusValue === 'all' || normalizedStatus === statusValue;
+      const matchesRole = roleValue === 'all' || (user.role || '').toLowerCase() === roleValue;
+      return matchesStatus && matchesRole;
+    });
+    renderUsers(filtered);
+    setUserListStatus(
+      filtered.length
+        ? `${filtered.length} usuario(s) coincide(n) con los filtros seleccionados.`
+        : 'Sin resultados para los filtros aplicados.',
+      filtered.length ? 'muted' : 'error'
+    );
+  };
+
+  const fetchUsers = async () => {
+    setUserListStatus('Sincronizando usuarios...');
+    const { headers, token } = getHeaders();
+    if (!token) {
+      setUserListStatus('Inicia sesión como administrador para ver el listado de usuarios.', 'error');
+      renderUsers([]);
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBase}/usuarios`, { headers });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo consultar el listado');
+      }
+      const body = await response.json();
+      cachedUsers = Array.isArray(body.data) ? body.data : [];
+      setUserListStatus(`Se cargaron ${cachedUsers.length} usuarios del sistema.`, 'success');
+      applyFilters();
+    } catch (error) {
+      cachedUsers = [];
+      setUserListStatus(error.message, 'error');
+      renderUsers([]);
+    }
   };
 
   form?.addEventListener('submit', async (event) => {
@@ -135,6 +279,7 @@ const roles = [
       form.reset();
       feedback.textContent = 'Usuario creado. Comparte las credenciales de manera segura.';
       feedback.classList.add('text-green-600');
+      fetchUsers();
     } catch (error) {
       feedback.textContent = error.message;
       feedback.classList.add('text-red-500');
@@ -164,4 +309,10 @@ const roles = [
       profileOutput.classList.add('text-red-500');
     }
   });
+
+  statusFilter?.addEventListener('change', applyFilters);
+  roleFilter?.addEventListener('change', applyFilters);
+  userRefreshBtn?.addEventListener('click', fetchUsers);
+
+  fetchUsers();
 </script>

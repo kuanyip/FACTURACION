@@ -1,9 +1,15 @@
 ﻿---
+import Icon from './Icon.astro';
+
 const apiBase = Astro.props.apiBase;
 ---
 <section class="card space-y-4">
   <div>
-    <h3 class="text-lg font-semibold text-slate-900">Autenticacion</h3>
+    <div class="flex items-center gap-2 text-primary">
+      <Icon name="lock" />
+      <p class="text-sm uppercase tracking-wide">Acceso seguro</p>
+    </div>
+    <h3 class="text-xl font-semibold text-slate-900">Autenticacion</h3>
     <p class="text-sm text-slate-500">Inicia sesion para obtener un token JWT y habilitar las acciones protegidas.</p>
   </div>
   <form class="space-y-3" data-auth-form>
@@ -15,7 +21,10 @@ const apiBase = Astro.props.apiBase;
       <label>Contrasena</label>
       <input type="password" name="password" placeholder="********" required />
     </div>
-    <button type="submit">Ingresar</button>
+    <button type="submit">
+      <Icon name="lock" size={16} class="text-white" />
+      Ingresar
+    </button>
     <p class="text-xs text-slate-500" data-auth-status>Tu token se guardara en el navegador al iniciar sesion.</p>
   </form>
 </section>

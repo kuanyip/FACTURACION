@@ -1,0 +1,585 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+
+const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const catalogs = [
+  {
+    key: 'emisores',
+    title: 'Emisores',
+    description: 'Definen quien emite la factura y sus datos fiscales. Completa al menos un emisor para asociarlo al documento.',
+    endpoint: '/emisores',
+    itemName: 'emisor',
+    emptyState: 'Todavia no se cargan emisores. Usa el formulario para registrar el primero.',
+    listFields: ['razonSocial', 'rut'],
+    detailFields: ['giro', 'email', 'telefono'],
+    detailLabels: { giro: 'Giro', email: 'Correo', telefono: 'Telefono' },
+    fields: [
+      { name: 'rut', label: 'RUT', placeholder: '76000000-0', component: 'input', type: 'text', required: true },
+      {
+        name: 'razonSocial',
+        label: 'Razon social',
+        placeholder: 'Empresa Ejemplo SPA',
+        component: 'input',
+        type: 'text',
+        required: true,
+        fullWidth: true
+      },
+      {
+        name: 'giro',
+        label: 'Giro',
+        placeholder: 'Servicios profesionales',
+        component: 'input',
+        type: 'text',
+        fullWidth: true
+      },
+      {
+        name: 'direccion',
+        label: 'Direccion',
+        placeholder: 'Av. Siempre Viva 123',
+        component: 'input',
+        type: 'text',
+        fullWidth: true
+      },
+      { name: 'comuna', label: 'Comuna', placeholder: 'Santiago', component: 'input', type: 'text' },
+      { name: 'ciudad', label: 'Ciudad', placeholder: 'Santiago', component: 'input', type: 'text' },
+      { name: 'telefono', label: 'Telefono', placeholder: '+56 9 1111 1111', component: 'input', type: 'text' },
+      { name: 'email', label: 'Correo', placeholder: 'facturacion@empresa.com', component: 'input', type: 'email' },
+      {
+        name: 'sitioWeb',
+        label: 'Sitio web',
+        placeholder: 'https://empresa.com',
+        component: 'input',
+        type: 'text',
+        fullWidth: true
+      }
+    ]
+  },
+  {
+    key: 'clientes',
+    title: 'Clientes',
+    description: 'Entidades receptoras de las facturas. Deben existir antes de emitir un documento.',
+    endpoint: '/clientes',
+    itemName: 'cliente',
+    emptyState: 'Crea clientes para poder asociarlos a las facturas.',
+    listFields: ['razonSocial', 'rut'],
+    detailFields: ['giro', 'email', 'telefono'],
+    detailLabels: { giro: 'Giro', email: 'Correo', telefono: 'Telefono' },
+    fields: [
+      { name: 'rut', label: 'RUT', placeholder: '60803000-K', component: 'input', type: 'text', required: true },
+      {
+        name: 'razonSocial',
+        label: 'Razon social',
+        placeholder: 'Cliente Demo LTDA',
+        component: 'input',
+        type: 'text',
+        required: true,
+        fullWidth: true
+      },
+      {
+        name: 'giro',
+        label: 'Giro',
+        placeholder: 'Comercio menor',
+        component: 'input',
+        type: 'text',
+        fullWidth: true
+      },
+      {
+        name: 'direccion',
+        label: 'Direccion',
+        placeholder: 'Calle Principal 456',
+        component: 'input',
+        type: 'text',
+        fullWidth: true
+      },
+      { name: 'comuna', label: 'Comuna', placeholder: 'Providencia', component: 'input', type: 'text' },
+      { name: 'ciudad', label: 'Ciudad', placeholder: 'Santiago', component: 'input', type: 'text' },
+      { name: 'telefono', label: 'Telefono', placeholder: '+56 2 2345 6789', component: 'input', type: 'text' },
+      { name: 'email', label: 'Correo', placeholder: 'contacto@cliente.com', component: 'input', type: 'email' }
+    ]
+  },
+  {
+    key: 'formasPago',
+    title: 'Formas de pago',
+    description: 'Opciones predefinidas como transferencia, tarjeta o efectivo. Se usan como referencia en la factura.',
+    endpoint: '/formas-pago',
+    itemName: 'forma de pago',
+    emptyState: 'Sin formas de pago registradas.',
+    listFields: ['codigo', 'nombre'],
+    detailFields: ['descripcion'],
+    detailLabels: { descripcion: 'Descripcion' },
+    fields: [
+      { name: 'codigo', label: 'Codigo', placeholder: 'TRF', component: 'input', type: 'text', required: true },
+      { name: 'nombre', label: 'Nombre', placeholder: 'Transferencia bancaria', component: 'input', type: 'text', required: true },
+      {
+        name: 'descripcion',
+        label: 'Descripcion',
+        placeholder: 'Detalles visibles en el PDF',
+        component: 'textarea',
+        rows: 2,
+        fullWidth: true
+      }
+    ]
+  },
+  {
+    key: 'condicionesPago',
+    title: 'Condiciones de pago',
+    description: 'Describe plazos como contado o 30 dias para controlar la cartera.',
+    endpoint: '/condiciones-pago',
+    itemName: 'condicion de pago',
+    emptyState: 'Aun no se registran condiciones de pago.',
+    listFields: ['codigo', 'nombre'],
+    detailFields: ['descripcion'],
+    detailLabels: { descripcion: 'Descripcion' },
+    fields: [
+      {
+        name: 'codigo',
+        label: 'Codigo',
+        placeholder: '30',
+        component: 'input',
+        type: 'number',
+        valueType: 'number',
+        min: 0,
+        required: true
+      },
+      { name: 'nombre', label: 'Nombre', placeholder: '30 dias', component: 'input', type: 'text', required: true },
+      {
+        name: 'descripcion',
+        label: 'Descripcion',
+        placeholder: 'Notas internas',
+        component: 'textarea',
+        rows: 2,
+        fullWidth: true
+      }
+    ]
+  },
+  {
+    key: 'estadosFactura',
+    title: 'Estados de factura',
+    description: 'Catalogo de estados internos o SII. Controla el workflow de aprobacion y pago.',
+    endpoint: '/estados-factura',
+    itemName: 'estado de factura',
+    emptyState: 'Ningun estado configurado.',
+    listFields: ['codigo', 'nombre'],
+    detailFields: ['codigoSii', 'descripcion', 'esFinal'],
+    detailLabels: { codigoSii: 'Codigo SII', descripcion: 'Descripcion', esFinal: 'Estado final' },
+    fields: [
+      { name: 'codigo', label: 'Codigo interno', placeholder: 'EMITIDA', component: 'input', type: 'text', required: true },
+      {
+        name: 'codigoSii',
+        label: 'Codigo SII',
+        placeholder: '0',
+        component: 'input',
+        type: 'number',
+        valueType: 'number',
+        min: 0
+      },
+      { name: 'nombre', label: 'Nombre', placeholder: 'Emitida', component: 'input', type: 'text', required: true },
+      {
+        name: 'descripcion',
+        label: 'Descripcion',
+        placeholder: 'Visible solo para el equipo',
+        component: 'textarea',
+        rows: 2,
+        fullWidth: true
+      },
+      {
+        name: 'esFinal',
+        label: 'Estado final',
+        component: 'checkbox',
+        checkboxLabel: 'Marcar si este estado cierra el ciclo',
+        valueType: 'boolean',
+        fullWidth: true
+      }
+    ]
+  }
+];
+---
+<BaseLayout title="Catalogos de factura">
+  <div class="space-y-8">
+    <section class="card space-y-3">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-900">Administracion de catalogos</h2>
+        <p class="text-sm text-slate-500">
+          Estos recursos alimentan cada factura (datos de emisor, cliente y metadatos como forma/condicion de pago o estado).
+          Todas las operaciones requieren el token guardado desde la tarjeta de autenticacion del dashboard.
+        </p>
+      </div>
+      <p class="text-xs text-slate-500">
+        Tip: inicia sesion como administrador y vuelve a esta vista para crear, editar o remover los catalogos.
+      </p>
+    </section>
+
+    {catalogs.map((catalog) => (
+      <section class="card space-y-5" data-catalog={catalog.key} data-endpoint={catalog.endpoint}>
+        <div>
+          <h3 class="text-lg font-semibold text-slate-900">{catalog.title}</h3>
+          <p class="text-sm text-slate-500">{catalog.description}</p>
+          <p class="text-xs text-slate-500" data-mode-label>Creando nueva {catalog.itemName}</p>
+        </div>
+        <form class="space-y-4" data-catalog-form>
+          <input type="hidden" name="id" />
+          <div class="grid gap-3 md:grid-cols-2">
+            {catalog.fields.map((field) => (
+              <div class={`space-y-1 ${field.fullWidth ? 'md:col-span-2' : ''}`} data-field-wrapper>
+                {field.component === 'textarea' ? (
+                  <>
+                    <label for={`${catalog.key}-${field.name}`}>{field.label}</label>
+                    <textarea
+                      id={`${catalog.key}-${field.name}`}
+                      name={field.name}
+                      placeholder={field.placeholder ?? ''}
+                      rows={field.rows ?? 3}
+                      data-field
+                      data-field-type={field.valueType || 'text'}
+                      required={Boolean(field.required)}
+                    ></textarea>
+                  </>
+                ) : field.component === 'checkbox' ? (
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      id={`${catalog.key}-${field.name}`}
+                      type="checkbox"
+                      name={field.name}
+                      data-field
+                      data-field-type={field.valueType || 'boolean'}
+                    />
+                    {field.checkboxLabel || field.label}
+                  </label>
+                ) : (
+                  <>
+                    <label for={`${catalog.key}-${field.name}`}>{field.label}</label>
+                    <input
+                      id={`${catalog.key}-${field.name}`}
+                      type={field.type || 'text'}
+                      name={field.name}
+                      placeholder={field.placeholder ?? ''}
+                      data-field
+                      data-field-type={field.valueType || (field.type === 'number' ? 'number' : 'text')}
+                      required={Boolean(field.required)}
+                      min={field.min}
+                      max={field.max}
+                      step={field.step}
+                    />
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button type="submit">
+              <Icon name="plus" size={18} class="text-white" />
+              Guardar {catalog.itemName}
+            </button>
+            <button type="button" class="btn-secondary" data-cancel>
+              <Icon name="close" size={16} class="text-current" />
+              Cancelar edicion
+            </button>
+            <button type="button" class="btn-outline" data-refresh>
+              <Icon name="refresh" size={16} class="text-current" />
+              Recargar listado
+            </button>
+          </div>
+          <p class="text-xs text-slate-500" data-catalog-feedback>
+            Las nuevas entradas se crean via API protegida. Inicia sesion para habilitarlas.
+          </p>
+        </form>
+        <div class="space-y-2">
+          <p class="text-xs text-slate-500" data-list-status>
+            Aun no se consultan registros. Presiona "Recargar listado" para traerlos.
+          </p>
+          <ul class="space-y-3" data-catalog-list></ul>
+        </div>
+      </section>
+    ))}
+  </div>
+</BaseLayout>
+
+<script type="module" define:vars={{ apiBase, catalogs }}>
+  const catalogConfigs = new Map(catalogs.map((entry) => [entry.key, entry]));
+
+  const actionSvgs = {
+    edit: `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M15.232 5.232L18.768 8.768" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M4 20l3.5-.5L18.768 8.768l-3.536-3.536L4.5 16.5z" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`,
+    delete: `
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M6 7h12" stroke-linecap="round" />
+        <path d="M10 11v6M14 11v6" stroke-linecap="round" />
+        <path d="M9 7l1-2h4l1 2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M7 7l1 12h8l1-12" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>`
+  };
+
+  const getToken = () => localStorage.getItem('authToken');
+
+  const request = async (path, options = {}) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('Necesitas iniciar sesion en el dashboard para usar esta seccion.');
+    }
+    const headers = {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`
+    };
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    const response = await fetch(`${apiBase}${path}`, { ...options, headers });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.message || 'Error al comunicar con la API');
+    }
+    if (response.status === 204) {
+      return null;
+    }
+    const payload = await response.json().catch(() => ({}));
+    return payload.data ?? payload;
+  };
+
+  const sections = document.querySelectorAll('[data-catalog]');
+
+  sections.forEach((section) => {
+    const key = section.dataset.catalog;
+    const config = catalogConfigs.get(key);
+    const endpoint = section.dataset.endpoint;
+    if (!config || !endpoint) return;
+
+    const form = section.querySelector('[data-catalog-form]');
+    const feedback = section.querySelector('[data-catalog-feedback]');
+    const list = section.querySelector('[data-catalog-list]');
+    const listStatus = section.querySelector('[data-list-status]');
+    const modeLabel = section.querySelector('[data-mode-label]');
+    const cancelBtn = section.querySelector('[data-cancel]');
+    const refreshBtn = section.querySelector('[data-refresh]');
+    const fieldElements = Array.from(form?.querySelectorAll('[data-field]') || []);
+    let editingId = null;
+    let cache = [];
+
+    const setModeLabel = () => {
+      if (!modeLabel) return;
+      if (editingId) {
+        modeLabel.textContent = `Editando ${config.itemName} #${editingId}`;
+      } else {
+        modeLabel.textContent = `Creando nueva ${config.itemName}`;
+      }
+    };
+
+    const setFeedback = (message, type = 'muted') => {
+      if (!feedback) return;
+      feedback.textContent = message;
+      feedback.classList.remove('text-red-500', 'text-green-600', 'text-slate-500');
+      if (type === 'error') {
+        feedback.classList.add('text-red-500');
+      } else if (type === 'success') {
+        feedback.classList.add('text-green-600');
+      } else {
+        feedback.classList.add('text-slate-500');
+      }
+    };
+
+    const updateListStatus = (message, isError = false) => {
+      if (!listStatus) return;
+      listStatus.textContent = message;
+      listStatus.classList.toggle('text-red-500', Boolean(isError));
+      listStatus.classList.toggle('text-slate-500', !isError);
+    };
+
+    const clearForm = () => {
+      if (!form) return;
+      form.reset();
+      editingId = null;
+      setModeLabel();
+    };
+
+    const fillForm = (item) => {
+      if (!form) return;
+      editingId = item?.id ?? null;
+      fieldElements.forEach((field) => {
+        const name = field.name;
+        if (!(name in item)) {
+          const isCheckbox = field instanceof HTMLInputElement && field.type === 'checkbox';
+          if (isCheckbox) {
+            field.checked = false;
+          } else {
+            field.value = '';
+          }
+          return;
+        }
+        const isCheckbox = field instanceof HTMLInputElement && field.type === 'checkbox';
+        if (isCheckbox) {
+          field.checked = Boolean(item[name]);
+        } else {
+          field.value = item[name] ?? '';
+        }
+      });
+      setModeLabel();
+    };
+
+    const parseValue = (field) => {
+      const type = field.dataset.fieldType || 'text';
+      const isCheckbox = field instanceof HTMLInputElement && field.type === 'checkbox';
+      if (type === 'boolean') {
+        return isCheckbox ? field.checked : Boolean(field.value);
+      }
+      if (type === 'number') {
+        const value = field.value.trim();
+        if (value === '') return undefined;
+        const num = Number(value);
+        if (Number.isNaN(num)) return undefined;
+        return num;
+      }
+      const value = field.value.trim();
+      return value === '' ? undefined : value;
+    };
+
+    const serializeForm = () => {
+      const body = {};
+      fieldElements.forEach((field) => {
+        const value = parseValue(field);
+        if (value !== undefined) {
+          body[field.name] = value;
+        }
+      });
+      return body;
+    };
+
+    const renderList = (items = []) => {
+      if (!list) return;
+      list.innerHTML = '';
+      if (!items.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.className = 'rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500';
+        emptyItem.textContent = config.emptyState;
+        list.appendChild(emptyItem);
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      items.forEach((item) => {
+        const li = document.createElement('li');
+        li.className = 'rounded-lg border border-slate-200 p-4 shadow-sm flex flex-col gap-2 md:flex-row md:items-center md:justify-between';
+        const summaryValues = (config.listFields || [])
+          .map((field) => item[field])
+          .filter((value) => value !== undefined && value !== null && value !== '');
+        const summary = summaryValues.length ? summaryValues.join(' · ') : `#${item.id}`;
+        const details = (config.detailFields || [])
+          .map((field) => {
+            if (!(field in item)) return null;
+            const label = config.detailLabels?.[field];
+            const value = item[field];
+            if (value === undefined || value === null || value === '') return null;
+            if (typeof value === 'boolean') {
+              return label ? `${label}: ${value ? 'si' : 'no'}` : value ? 'si' : 'no';
+            }
+            return label ? `${label}: ${value}` : value;
+          })
+          .filter(Boolean)
+          .join(' · ');
+        const content = document.createElement('div');
+        const title = document.createElement('p');
+        title.className = 'text-sm font-semibold text-slate-900';
+        title.textContent = summary;
+        content.appendChild(title);
+        if (details) {
+          const detailEl = document.createElement('p');
+          detailEl.className = 'text-xs text-slate-500';
+          detailEl.textContent = details;
+          content.appendChild(detailEl);
+        }
+        const actions = document.createElement('div');
+        actions.className = 'flex flex-wrap gap-2 text-sm';
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.innerHTML = `${actionSvgs.edit}<span>Editar</span>`;
+        editBtn.dataset.edit = 'true';
+        editBtn.dataset.id = item.id;
+        editBtn.className = 'btn-ghost btn-ghost--edit';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.innerHTML = `${actionSvgs.delete}<span>Eliminar</span>`;
+        deleteBtn.dataset.delete = 'true';
+        deleteBtn.dataset.id = item.id;
+        deleteBtn.className = 'btn-ghost btn-ghost--delete';
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        li.appendChild(content);
+        li.appendChild(actions);
+        fragment.appendChild(li);
+      });
+      list.appendChild(fragment);
+    };
+
+    const loadList = async () => {
+      updateListStatus('Consultando API...');
+      try {
+        const items = await request(endpoint);
+        cache = Array.isArray(items) ? items : [];
+        renderList(cache);
+        updateListStatus(cache.length ? `${cache.length} registros encontrados.` : config.emptyState);
+      } catch (error) {
+        updateListStatus(error.message, true);
+        renderList([]);
+      }
+    };
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setFeedback('Guardando cambios...');
+      try {
+        const body = serializeForm();
+        const method = editingId ? 'PUT' : 'POST';
+        const path = editingId ? `${endpoint}/${editingId}` : endpoint;
+        await request(path, {
+          method,
+          body: JSON.stringify(body)
+        });
+        setFeedback('Cambios guardados correctamente.', 'success');
+        clearForm();
+        await loadList();
+      } catch (error) {
+        setFeedback(error.message, 'error');
+      }
+    });
+
+    cancelBtn?.addEventListener('click', () => {
+      clearForm();
+      setFeedback(`Creando nueva ${config.itemName}.`, 'muted');
+    });
+
+    refreshBtn?.addEventListener('click', () => {
+      loadList();
+    });
+
+    list?.addEventListener('click', async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const id = target.dataset.id;
+      if (!id) return;
+      if (target.dataset.edit) {
+        const item = cache.find((entry) => String(entry.id) === String(id));
+        if (item) {
+          fillForm(item);
+          setFeedback(`Editando ${config.itemName} seleccionada.`, 'muted');
+        }
+      } else if (target.dataset.delete) {
+        const confirmed = confirm('Esta accion eliminara el registro. Deseas continuar?');
+        if (!confirmed) return;
+        try {
+          await request(`${endpoint}/${id}`, { method: 'DELETE' });
+          setFeedback('Registro eliminado.', 'success');
+          if (editingId && String(editingId) === String(id)) {
+            clearForm();
+          }
+          await loadList();
+        } catch (error) {
+          setFeedback(error.message, 'error');
+        }
+      }
+    });
+
+    setModeLabel();
+    loadList();
+  });
+</script>

@@ -1,4 +1,6 @@
 ﻿---
+import Icon from './Icon.astro';
+
 const {
   invoices = [],
   customers = [],
@@ -11,22 +13,30 @@ const summaryCards = [
   {
     label: 'Ingresos totales',
     value: formatter.format(totalRevenue),
-    helper: 'Incluye todas las facturas registradas'
+    helper: 'Incluye todas las facturas registradas',
+    icon: 'revenue',
+    accent: 'from-emerald-500/20 to-emerald-500/60'
   },
   {
     label: 'Facturas pagadas',
     value: paidInvoices.length,
-    helper: 'Pagos confirmados'
+    helper: 'Pagos confirmados',
+    icon: 'invoice',
+    accent: 'from-primary/20 to-primary/70'
   },
   {
     label: 'Pendientes',
     value: outstanding,
-    helper: 'Estado distinto de paid'
+    helper: 'Estado distinto de paid',
+    icon: 'pending',
+    accent: 'from-amber-400/20 to-amber-500/60'
   },
   {
     label: 'Clientes activos',
     value: customers.length,
-    helper: 'Clientes en la base de datos'
+    helper: 'Clientes en la base de datos',
+    icon: 'customers',
+    accent: 'from-sky-400/20 to-sky-500/60'
   }
 ];
 ---
@@ -36,16 +46,25 @@ const summaryCards = [
       <p class="text-sm uppercase tracking-wide text-slate-500">Resumen</p>
       <h2 class="text-2xl font-semibold text-slate-900">Estado general de facturacion</h2>
     </div>
-    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+    <span class="chip">
+      <Icon name="invoice" size={14} />
       {invoices.length} facturas
     </span>
   </div>
   <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
     {summaryCards.map((card) => (
-      <article class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-5 shadow-sm" key={card.label}>
-        <p class="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
-        <p class="text-2xl font-semibold text-slate-900">{card.value}</p>
-        <p class="text-xs text-slate-500">{card.helper}</p>
+      <article class="relative overflow-hidden rounded-2xl border border-slate-100/60 bg-gradient-to-br from-white to-slate-50 p-5 shadow-lg" key={card.label}>
+        <div class={`absolute inset-y-0 right-0 w-1/3 bg-gradient-to-t ${card.accent} opacity-30`}></div>
+        <div class="relative flex items-start justify-between">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
+            <p class="text-2xl font-semibold text-slate-900">{card.value}</p>
+            <p class="text-xs text-slate-500">{card.helper}</p>
+          </div>
+          <div class={`rounded-2xl bg-gradient-to-tr ${card.accent} p-3 text-primary`}>
+            <Icon name={card.icon} size={24} class="text-slate-900/80" />
+          </div>
+        </div>
       </article>
     ))}
   </div>
