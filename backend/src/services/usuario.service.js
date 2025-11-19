@@ -12,11 +12,11 @@ const getUserById = async (id) => {
   return rows[0] || null;
 };
 
-const createUser = async ({ name, email, password, role = 'digitador' }) => {
+const createUser = async ({ name, email, password, role = 'digitador', status = 'activo' }) => {
   const hashed = await hashPassword(password);
   const [result] = await pool.execute(
-    'INSERT INTO usuarios (name, email, password, role) VALUES (?, ?, ?, ?)',
-    [name, email, hashed, role]
+    'INSERT INTO usuarios (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)',
+    [name, email, hashed, role, status]
   );
   return getUserById(result.insertId);
 };
@@ -26,7 +26,7 @@ const listUsers = async () => {
   return rows;
 };
 
-const updateUser = async (id, { name, email, password, role }) => {
+const updateUser = async (id, { name, email, password, role, status }) => {
   const current = await getUserById(id);
   if (!current) {
     throw createHttpError(404, 'Usuario no encontrado');
@@ -46,6 +46,10 @@ const updateUser = async (id, { name, email, password, role }) => {
   if (role !== undefined) {
     sets.push('role = ?');
     values.push(role);
+  }
+  if (status !== undefined) {
+    sets.push('status = ?');
+    values.push(status);
   }
   if (password !== undefined) {
     const hashed = await hashPassword(password);
@@ -76,6 +80,9 @@ const verifyCredentials = async (email, password) => {
   const match = await comparePassword(password, usuario.password);
   if (!match) {
     throw createHttpError(401, 'Credenciales invalidas');
+  }
+  if (usuario.status && usuario.status !== 'activo') {
+    throw createHttpError(403, 'Tu cuenta está desactivada. Contacta a un administrador.');
   }
   return usuario;
 };

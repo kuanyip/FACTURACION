@@ -1,0 +1,428 @@
+﻿---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const tipoDetalleCatalog = [
+  { id: 33, codigo: 33, nombre: 'Factura electrónica afecta' },
+  { id: 34, codigo: 34, nombre: 'Factura electrónica exenta' },
+  { id: 46, codigo: 46, nombre: 'Factura de compra' },
+  { id: 52, codigo: 52, nombre: 'Guía de despacho' },
+  { id: 56, codigo: 56, nombre: 'Nota de débito' },
+  { id: 61, codigo: 61, nombre: 'Nota de crédito' }
+];
+---
+<BaseLayout title="Crear factura">
+  <div class="space-y-8">
+    <section class="card space-y-3">
+      <div>
+        <h2 class="text-2xl font-semibold text-slate-900">Nueva factura</h2>
+        <p class="text-sm text-slate-500">
+          Completa la siguiente información para registrar una factura desde cero. Debes iniciar sesión como administrador o
+          digitador para guardar el documento.
+        </p>
+      </div>
+      <p class="text-xs text-amber-600">El formulario se alimenta desde /emisores, /clientes, /formas-pago y catálogos relacionados.</p>
+    </section>
+
+    <form class="card space-y-6" data-invoice-form>
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Identificación</legend>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label>Emisor</label>
+            <select name="emisorId" required data-catalog="emisores">
+              <option value="">Selecciona un emisor</option>
+            </select>
+          </div>
+          <div>
+            <label>Cliente</label>
+            <select name="clienteId" required data-catalog="clientes">
+              <option value="">Selecciona un cliente</option>
+            </select>
+          </div>
+          <div>
+            <label>Tipo de documento</label>
+            <select name="tipoDetalleId" required data-catalog="tipo_detalle">
+              <option value="">Selecciona tipo</option>
+            </select>
+          </div>
+          <div>
+            <label>Folio</label>
+            <input type="number" min="1" name="folio" placeholder="1001" required />
+          </div>
+          <div>
+            <label>Condición de pago</label>
+            <select name="condicionPagoId" required data-catalog="condiciones_pago">
+              <option value="">Selecciona condición</option>
+            </select>
+          </div>
+          <div>
+            <label>Forma de pago</label>
+            <select name="formaPagoId" required data-catalog="formas_pago">
+              <option value="">Selecciona forma</option>
+            </select>
+          </div>
+          <div>
+            <label>Estado</label>
+            <select name="estadoFacturaId" required data-catalog="estados_factura">
+              <option value="">Selecciona estado</option>
+            </select>
+          </div>
+          <div>
+            <label>Moneda</label>
+            <input name="moneda" placeholder="CLP" maxlength="3" value="CLP" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Fechas y referencias</legend>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label>Fecha de emisión</label>
+            <input type="date" name="fechaEmision" required />
+          </div>
+          <div>
+            <label>Fecha de vencimiento</label>
+            <input type="date" name="fechaVencimiento" />
+          </div>
+          <div>
+            <label>Orden de compra</label>
+            <input name="ordenCompra" placeholder="OC-2025-001" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Montos</legend>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label>Neto afecto</label>
+            <input name="netoAfecto" type="number" min="0" step="0.01" placeholder="100000" />
+          </div>
+          <div>
+            <label>Neto exento</label>
+            <input name="netoExento" type="number" min="0" step="0.01" placeholder="0" />
+          </div>
+          <div>
+            <label>Otros cargos</label>
+            <input name="otrosCargos" type="number" min="0" step="0.01" placeholder="0" />
+          </div>
+          <div>
+            <label>Impuesto específico</label>
+            <input name="impuestoEspecifico" type="number" min="0" step="0.01" placeholder="0" />
+          </div>
+          <div>
+            <label>Monto IVA</label>
+            <input name="montoIva" type="number" min="0" step="0.01" placeholder="19000" />
+          </div>
+          <div>
+            <label>Total</label>
+            <input name="total" type="number" min="0" step="0.01" placeholder="119000" required />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Detalle de líneas</legend>
+        <div class="rounded-2xl border border-dashed border-slate-200 p-4 space-y-3">
+          <div class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-500">
+            <span class="col-span-4">Descripción</span>
+            <span class="col-span-2">Cantidad</span>
+            <span class="col-span-2">Precio</span>
+            <span class="col-span-2">% Desc.</span>
+            <span class="col-span-1">Monto desc.</span>
+            <span class="col-span-1">Subtotal</span>
+          </div>
+          <div class="space-y-3" data-detail-list></div>
+          <button type="button" class="btn-outline" data-add-detail>Agregar línea</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Impuestos adicionales</legend>
+        <div class="rounded-2xl border border-dashed border-slate-200 p-4 space-y-3">
+          <div class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-500">
+            <span class="col-span-4">Código</span>
+            <span class="col-span-4">Descripción</span>
+            <span class="col-span-2">% tasa</span>
+            <span class="col-span-2">Monto</span>
+          </div>
+          <div class="space-y-3" data-tax-list></div>
+          <button type="button" class="btn-outline" data-add-tax>Agregar impuesto</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="space-y-4">
+        <legend class="text-lg font-semibold text-slate-900">Referencias</legend>
+        <div class="rounded-2xl border border-dashed border-slate-200 p-4 space-y-3">
+          <div class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-500">
+            <span class="col-span-3">Tipo doc</span>
+            <span class="col-span-3">Folio</span>
+            <span class="col-span-3">Fecha</span>
+            <span class="col-span-3">Motivo</span>
+          </div>
+          <div class="space-y-3" data-ref-list></div>
+          <button type="button" class="btn-outline" data-add-ref>Agregar referencia</button>
+        </div>
+      </fieldset>
+
+      <div class="space-y-2">
+        <button type="submit">Registrar factura</button>
+        <p class="text-xs text-slate-500" data-form-status>Los totales deben coincidir con el detalle ingresado.</p>
+      </div>
+    </form>
+
+    <template data-detail-template>
+      <div class="detail-row grid grid-cols-12 gap-2" data-detail-row>
+        <input class="col-span-4" placeholder="Descripción del ítem" data-detail-field="descripcion" required />
+        <input class="col-span-2" type="number" min="0" step="0.01" placeholder="1" data-detail-field="cantidad" required />
+        <input class="col-span-2" type="number" min="0" step="0.01" placeholder="1000" data-detail-field="precioUnitario" required />
+        <input class="col-span-2" type="number" min="0" step="0.01" placeholder="0" data-detail-field="descuentoPorcentaje" />
+        <input class="col-span-1" type="number" min="0" step="0.01" placeholder="0" data-detail-field="descuentoMonto" />
+        <input class="col-span-1" type="number" min="0" step="0.01" placeholder="0" data-detail-field="subtotal" />
+      </div>
+    </template>
+
+    <template data-tax-template>
+      <div class="grid grid-cols-12 gap-2" data-tax-row>
+        <input class="col-span-4" placeholder="IVA adicional" data-tax-field="codigoImpuesto" required />
+        <input class="col-span-4" placeholder="Descripción" data-tax-field="descripcion" />
+        <input class="col-span-2" type="number" min="0" step="0.01" placeholder="19" data-tax-field="tasa" />
+        <input class="col-span-2" type="number" min="0" step="0.01" placeholder="0" data-tax-field="monto" required />
+      </div>
+    </template>
+
+    <template data-ref-template>
+      <div class="grid grid-cols-12 gap-2" data-ref-row>
+        <input class="col-span-3" placeholder="NC" data-ref-field="tipoDoc" required />
+        <input class="col-span-3" placeholder="123" data-ref-field="folioRef" required />
+        <input class="col-span-3" type="date" data-ref-field="fechaRef" required />
+        <input class="col-span-3" placeholder="Motivo" data-ref-field="motivo" />
+      </div>
+    </template>
+  </div>
+</BaseLayout>
+
+<script type="module" define:vars={{ apiBase, tipoDetalleCatalog }}>
+  const form = document.querySelector('[data-invoice-form]');
+  const status = document.querySelector('[data-form-status]');
+  const detailList = document.querySelector('[data-detail-list]');
+  const taxList = document.querySelector('[data-tax-list]');
+  const refList = document.querySelector('[data-ref-list]');
+  const detailTemplate = document.querySelector('[data-detail-template]');
+  const taxTemplate = document.querySelector('[data-tax-template]');
+  const refTemplate = document.querySelector('[data-ref-template]');
+  const addDetailBtn = document.querySelector('[data-add-detail]');
+  const addTaxBtn = document.querySelector('[data-add-tax]');
+  const addRefBtn = document.querySelector('[data-add-ref]');
+  const catalogSelects = document.querySelectorAll('select[data-catalog]');
+
+  const catalogs = {
+    emisores: [],
+    clientes: [],
+    formas_pago: [],
+    condiciones_pago: [],
+    estados_factura: [],
+    tipo_detalle: tipoDetalleCatalog
+  };
+
+  const fetchCatalog = async (endpoint, key) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Inicia sesión para cargar los catálogos.');
+    }
+    const response = await fetch(`${apiBase}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || `No se pudo cargar ${key}`);
+    }
+    const body = await response.json();
+    catalogs[key] = body.data;
+    populateSelects(key);
+  };
+
+  const populateSelects = (key) => {
+    catalogSelects.forEach((select) => {
+      if (select.dataset.catalog !== key) return;
+      const list = catalogs[key] || [];
+      select.innerHTML = select.querySelector('option[value=""]')
+        ? '<option value="">Selecciona una opción</option>'
+        : '';
+      list.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        if (key === 'clientes') {
+          option.textContent = item.razonSocial || item.name || item.email;
+        } else if (key === 'emisores') {
+          option.textContent = item.razonSocial || item.nombre || item.rut;
+        } else if (key === 'tipo_detalle') {
+          option.textContent = `${item.codigo} - ${item.nombre}`;
+        } else {
+          option.textContent = item.nombre || item.codigo || `#${item.id}`;
+        }
+        select.appendChild(option);
+      });
+    });
+  };
+
+  const initCatalogs = async () => {
+    try {
+      await Promise.all([
+        fetchCatalog('/emisores', 'emisores'),
+        fetchCatalog('/clientes', 'clientes'),
+        fetchCatalog('/formas-pago', 'formas_pago'),
+        fetchCatalog('/condiciones-pago', 'condiciones_pago'),
+        fetchCatalog('/estados-factura', 'estados_factura')
+      ]);
+      populateSelects('tipo_detalle');
+      status.textContent = 'Catálogos cargados. Completa la factura.';
+    } catch (error) {
+      status.textContent = error.message;
+      status.classList.add('text-red-500');
+    }
+  };
+
+  const addDetailRow = (data = {}) => {
+    if (!detailTemplate || !detailList) return;
+    const clone = detailTemplate.content.cloneNode(true);
+    const row = clone.querySelector('[data-detail-row]');
+    row.querySelectorAll('[data-detail-field]').forEach((input) => {
+      const key = input.dataset.detailField;
+      if (data[key] !== undefined) {
+        input.value = data[key];
+      }
+    });
+    detailList.appendChild(clone);
+  };
+
+  const addTaxRow = (data = {}) => {
+    if (!taxTemplate || !taxList) return;
+    const clone = taxTemplate.content.cloneNode(true);
+    clone.querySelectorAll('[data-tax-field]').forEach((input) => {
+      const key = input.dataset.taxField;
+      if (data[key] !== undefined) {
+        input.value = data[key];
+      }
+    });
+    taxList.appendChild(clone);
+  };
+
+  const addRefRow = (data = {}) => {
+    if (!refTemplate || !refList) return;
+    const clone = refTemplate.content.cloneNode(true);
+    clone.querySelectorAll('[data-ref-field]').forEach((input) => {
+      const key = input.dataset.refField;
+      if (data[key] !== undefined) {
+        input.value = data[key];
+      }
+    });
+    refList.appendChild(clone);
+  };
+
+  addDetailBtn?.addEventListener('click', () => addDetailRow());
+  addTaxBtn?.addEventListener('click', () => addTaxRow());
+  addRefBtn?.addEventListener('click', () => addRefRow());
+
+  addDetailRow();
+
+  const serializeRows = (selector, attribute) => {
+    const rows = [];
+    document.querySelectorAll(selector).forEach((row, index) => {
+      const payload = {};
+      row.querySelectorAll(`[data-${attribute}-field]`).forEach((input) => {
+        const key = input.dataset[`${attribute}Field`];
+        const value = input.value?.trim();
+        if (!value) return;
+        if (input.type === 'number') {
+          payload[key] = Number(value);
+        } else {
+          payload[key] = value;
+        }
+      });
+      if (Object.keys(payload).length) {
+        if (attribute === 'detail' && !payload.nroLinea) {
+          payload.nroLinea = index + 1;
+        }
+        rows.push(payload);
+      }
+    });
+    return rows;
+  };
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('authToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return { headers, token };
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const { headers, token } = getHeaders();
+    if (!token) {
+      status.textContent = 'Inicia sesión para registrar una factura.';
+      status.classList.add('text-red-500');
+      return;
+    }
+    status.textContent = 'Registrando factura...';
+    status.classList.remove('text-red-500', 'text-green-600');
+    const formData = new FormData(form);
+    const numberFields = [
+      'folio',
+      'netoAfecto',
+      'netoExento',
+      'otrosCargos',
+      'impuestoEspecifico',
+      'montoIva',
+      'total',
+      'emisorId',
+      'clienteId',
+      'condicionPagoId',
+      'formaPagoId',
+      'estadoFacturaId',
+      'tipoDetalleId'
+    ];
+    const body = {};
+    formData.forEach((value, key) => {
+      if (numberFields.includes(key)) {
+        body[key] = value ? Number(value) : undefined;
+      } else {
+        body[key] = value || undefined;
+      }
+    });
+    body.detalles = serializeRows('[data-detail-row]', 'detail');
+    body.impuestos = serializeRows('[data-tax-row]', 'tax');
+    body.referencias = serializeRows('[data-ref-row]', 'ref');
+    try {
+      const response = await fetch(`${apiBase}/facturas`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo crear la factura');
+      }
+      form.reset();
+      detailList.innerHTML = '';
+      taxList.innerHTML = '';
+      refList.innerHTML = '';
+      addDetailRow();
+      status.textContent = 'Factura registrada correctamente.';
+      status.classList.add('text-green-600');
+    } catch (error) {
+      status.textContent = error.message;
+      status.classList.add('text-red-500');
+    }
+  });
+
+  initCatalogs();
+</script>

@@ -21,9 +21,22 @@ const ensureTables = async () => {
       email VARCHAR(160) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       role ENUM('admin','revisor','digitador') DEFAULT 'digitador',
+      status ENUM('activo','inactivo') NOT NULL DEFAULT 'activo',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB
   `);
+
+  // Aseguramos la columna status para instalaciones previas
+  try {
+    await pool.execute(`
+      ALTER TABLE usuarios
+      ADD COLUMN status ENUM('activo','inactivo') NOT NULL DEFAULT 'activo' AFTER role
+    `);
+  } catch (error) {
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      throw error;
+    }
+  }
 
   console.log('[database] Tabla de usuarios lista (resto de tablas proviene del script facturacion.sql)');
 };

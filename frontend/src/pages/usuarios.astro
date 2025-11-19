@@ -82,6 +82,7 @@ const roles = [
         <p class="text-sm text-slate-500">
           Filtra por estado (activo/inactivo) y por perfil para auditar historicos sin perder el contexto de roles.
         </p>
+        <p class="text-xs text-slate-500">Solo administradores pueden activar o desactivar cuentas.</p>
       </div>
       <form class="grid gap-3 md:grid-cols-2" data-user-filters>
         <div>
@@ -122,7 +123,7 @@ const roles = [
   </div>
 </BaseLayout>
 
-<script type="module" define:vars={{ apiBase }}>
+<script type="module" define:vars={{ apiBase, roles }}>
   const form = document.querySelector('[data-user-form]');
   const feedback = document.querySelector('[data-user-feedback]');
   const profileBtn = document.querySelector('[data-profile-btn]');
@@ -132,6 +133,11 @@ const roles = [
   const userRefreshBtn = document.querySelector('[data-user-refresh]');
   const statusFilter = document.querySelector('[data-filter-status]');
   const roleFilter = document.querySelector('[data-filter-role]');
+  const session = JSON.parse(localStorage.getItem('authUser') || '{}');
+  const sessionRole = session?.role || '';
+  const sessionUserId = session?.id || null;
+  const canManageUsers = sessionRole === 'admin';
+  const availableRoles = Array.isArray(roles) ? roles : [];
   let cachedUsers = [];
 
   const getHeaders = () => {
@@ -194,8 +200,51 @@ const roles = [
       statusChip.textContent = estado;
       chips.appendChild(roleChip);
       chips.appendChild(statusChip);
+      const meta = document.createElement('div');
+      meta.className = 'flex flex-col gap-2 md:items-end';
+      meta.appendChild(chips);
+      if (canManageUsers) {
+        const isSelf = sessionUserId && Number(sessionUserId) === Number(user.id);
+        const actions = document.createElement('div');
+        actions.className = 'flex flex-wrap gap-2 text-xs md:justify-end';
+        if (isSelf) {
+          const note = document.createElement('span');
+          note.className = 'text-[11px] text-slate-400';
+          note.textContent = 'No puedes cambiar tu propio estado o rol.';
+          actions.appendChild(note);
+        } else {
+          const roleLabel = document.createElement('label');
+          roleLabel.className = 'text-[11px] font-semibold text-slate-500 flex items-center gap-2';
+          roleLabel.textContent = 'Perfil:';
+          const roleSelect = document.createElement('select');
+          roleSelect.dataset.roleSelect = String(user.id);
+          roleSelect.className =
+            'rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700';
+          availableRoles.forEach((roleOption) => {
+            const option = document.createElement('option');
+            option.value = roleOption.value;
+            option.textContent = roleOption.title;
+            if ((user.role || '') === roleOption.value) {
+              option.selected = true;
+            }
+            roleSelect.appendChild(option);
+          });
+          roleLabel.appendChild(roleSelect);
+          actions.appendChild(roleLabel);
+          const nextStatus = estado === 'activo' ? 'inactivo' : 'activo';
+          const actionBtn = document.createElement('button');
+          actionBtn.type = 'button';
+          actionBtn.dataset.toggleUser = String(user.id);
+          actionBtn.dataset.nextStatus = nextStatus;
+          actionBtn.className =
+            'btn-ghost ' + (nextStatus === 'inactivo' ? 'btn-ghost--delete' : 'btn-ghost--edit');
+          actionBtn.textContent = nextStatus === 'inactivo' ? 'Desactivar' : 'Activar';
+          actions.appendChild(actionBtn);
+        }
+        meta.appendChild(actions);
+      }
       item.appendChild(info);
-      item.appendChild(chips);
+      item.appendChild(meta);
       fragment.appendChild(item);
     });
     userList.appendChild(fragment);
@@ -310,9 +359,82 @@ const roles = [
     }
   });
 
+  const toggleUserStatus = async (userId, nextStatus) => {
+    setUserListStatus(`Actualizando usuario #${userId}...`);
+    const { headers, token } = getHeaders();
+    if (!token) {
+      setUserListStatus('Debes iniciar sesión para administrar usuarios.', 'error');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBase}/usuarios/${userId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo actualizar el usuario');
+      }
+      const body = await response.json();
+      const updated = body.data;
+      cachedUsers = cachedUsers.map((user) => (user.id === updated.id ? { ...user, status: updated.status } : user));
+      setUserListStatus(`Usuario ${updated.name} ahora está ${updated.status}.`, 'success');
+      applyFilters();
+    } catch (error) {
+      setUserListStatus(error.message, 'error');
+    }
+  };
+
+  const updateUserRole = async (userId, role) => {
+    setUserListStatus(`Actualizando perfil de usuario #${userId}...`);
+    const { headers, token } = getHeaders();
+    if (!token) {
+      setUserListStatus('Debes iniciar sesión para administrar usuarios.', 'error');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBase}/usuarios/${userId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ role })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo actualizar el perfil');
+      }
+      const body = await response.json();
+      const updated = body.data;
+      cachedUsers = cachedUsers.map((user) => (user.id === updated.id ? { ...user, role: updated.role } : user));
+      setUserListStatus(`Usuario ${updated.name} ahora es ${updated.role}.`, 'success');
+      applyFilters();
+    } catch (error) {
+      setUserListStatus(error.message, 'error');
+    }
+  };
+
   statusFilter?.addEventListener('change', applyFilters);
   roleFilter?.addEventListener('change', applyFilters);
   userRefreshBtn?.addEventListener('click', fetchUsers);
+  userList?.addEventListener('click', (event) => {
+    const origin = event.target;
+    if (!(origin instanceof HTMLElement)) return;
+    const target = origin.closest('[data-toggle-user]');
+    if (!target) return;
+    const userId = Number(target.dataset.toggleUser);
+    const nextStatus = target.dataset.nextStatus;
+    if (!userId || !nextStatus) return;
+    toggleUserStatus(userId, nextStatus);
+  });
+
+  userList?.addEventListener('change', (event) => {
+    const origin = event.target;
+    if (!(origin instanceof HTMLSelectElement)) return;
+    const userId = Number(origin.dataset.roleSelect);
+    if (!userId) return;
+    const newRole = origin.value;
+    updateUserRole(userId, newRole);
+  });
 
   fetchUsers();
 </script>

@@ -7,6 +7,7 @@ const exponerUsuario = (usuario) => ({
   name: usuario.name,
   email: usuario.email,
   role: usuario.role,
+  status: usuario.status || 'activo',
   createdAt: usuario.created_at
 });
 
