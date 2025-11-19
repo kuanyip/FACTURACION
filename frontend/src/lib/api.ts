@@ -1,4 +1,6 @@
-﻿export type Customer = {
+﻿import { API_BASE, STATIC_API_TOKEN } from './config';
+
+export type Customer = {
   id: number;
   name: string;
   email: string;
@@ -27,15 +29,12 @@ export type DashboardData = {
   outstanding: number;
 };
 
-const API_BASE = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
-const STATIC_TOKEN = import.meta.env.PUBLIC_API_TOKEN || '';
-
 async function request<T>(path: string): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   };
-  if (STATIC_TOKEN) {
-    headers.Authorization = `Bearer ${STATIC_TOKEN}`;
+  if (STATIC_API_TOKEN) {
+    headers.Authorization = `Bearer ${STATIC_API_TOKEN}`;
   }
   const response = await fetch(`${API_BASE}${path}`, { headers });
   if (!response.ok) {

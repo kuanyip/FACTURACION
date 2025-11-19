@@ -56,6 +56,11 @@ const apiBase = Astro.props.apiBase;
       if (data.usuario) {
         localStorage.setItem('authUser', JSON.stringify(data.usuario));
       }
+      window.dispatchEvent(
+        new CustomEvent('auth:login', {
+          detail: data.usuario || null
+        })
+      );
       status.textContent = `Token guardado. Rol: ${data.usuario?.role || 'no informado'}. Ya puedes usar las acciones protegidas.`;
       status.classList.add('text-green-600');
     } catch (error) {

@@ -5,22 +5,54 @@ import QuickActions from '../components/QuickActions.astro';
 import RevenueChart from '../components/RevenueChart.astro';
 import AuthCard from '../components/AuthCard.astro';
 import { getDashboardData } from '../lib/api';
+import { API_BASE } from '../lib/config';
 
 const dashboard = await getDashboardData();
-const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const apiBase = API_BASE;
 ---
 <BaseLayout title="Panel de facturacion">
   <div class="space-y-8">
-    <InvoiceSummary
-      invoices={dashboard.invoices}
-      customers={dashboard.customers}
-      totalRevenue={dashboard.totalRevenue}
-      outstanding={dashboard.outstanding}
-    />
-    <div class="grid gap-6 lg:grid-cols-2">
+    <section class="space-y-4" data-guest-section>
       <AuthCard apiBase={apiBase} />
-      <QuickActions apiBase={apiBase} customers={dashboard.customers} />
-    </div>
-    <RevenueChart invoices={dashboard.invoices} />
+      <article class="card">
+        <h2 class="text-lg font-semibold text-slate-900">Acceso requerido</h2>
+        <p class="text-sm text-slate-600">
+          Inicia sesión para ver el dashboard y habilitar las acciones protegidas. Si no tienes cuenta, solicita acceso al administrador.
+        </p>
+      </article>
+    </section>
+    <section class="space-y-8 hidden" data-dashboard-section>
+      <InvoiceSummary
+        invoices={dashboard.invoices}
+        customers={dashboard.customers}
+        totalRevenue={dashboard.totalRevenue}
+        outstanding={dashboard.outstanding}
+      />
+      <div class="grid gap-6 lg:grid-cols-2">
+        <QuickActions apiBase={apiBase} customers={dashboard.customers} />
+        <RevenueChart invoices={dashboard.invoices} />
+      </div>
+    </section>
   </div>
 </BaseLayout>
+
+<script type="module">
+  const guestSection = document.querySelector('[data-guest-section]');
+  const dashboardSection = document.querySelector('[data-dashboard-section]');
+
+  const toggleSections = () => {
+    const token = localStorage.getItem('authToken');
+    const isLogged = Boolean(token);
+    guestSection?.classList.toggle('hidden', isLogged);
+    dashboardSection?.classList.toggle('hidden', !isLogged);
+  };
+
+  window.addEventListener('auth:login', toggleSections);
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'authToken') {
+      toggleSections();
+    }
+  });
+
+  toggleSections();
+</script>

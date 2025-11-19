@@ -1,7 +1,8 @@
 ﻿---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { API_BASE } from '../lib/config';
 
-const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const apiBase = API_BASE;
 const tipoDetalleCatalog = [
   { id: 33, codigo: 33, nombre: 'Factura electrónica afecta' },
   { id: 34, codigo: 34, nombre: 'Factura electrónica exenta' },
@@ -227,6 +228,82 @@ const tipoDetalleCatalog = [
     tipo_detalle: tipoDetalleCatalog
   };
 
+  const createSectionManager = ({ template, list, attr, addButton, rowSelector, assignLineNumber }) => {
+    const fillRow = (row, data = {}) => {
+      row.querySelectorAll(`[data-${attr}-field]`).forEach((input) => {
+        const key = input.dataset[`${attr}Field`];
+        if (data[key] !== undefined) {
+          input.value = data[key];
+        }
+      });
+    };
+
+    const addRow = (data = {}) => {
+      if (!template || !list) return;
+      const clone = template.content.cloneNode(true);
+      const row = clone.querySelector(rowSelector);
+      fillRow(row, data);
+      list.appendChild(clone);
+    };
+
+    const clear = () => {
+      if (list) {
+        list.innerHTML = '';
+      }
+    };
+
+    addButton?.addEventListener('click', () => addRow());
+
+    const serialize = () => {
+      const rows = [];
+      list?.querySelectorAll(rowSelector).forEach((row, index) => {
+        const payload = {};
+        row.querySelectorAll(`[data-${attr}-field]`).forEach((input) => {
+          const key = input.dataset[`${attr}Field`];
+          const value = input.value?.trim();
+          if (!value) return;
+          if (input.type === 'number') {
+            payload[key] = Number(value);
+          } else {
+            payload[key] = value;
+          }
+        });
+        if (Object.keys(payload).length) {
+          if (assignLineNumber) {
+            payload.nroLinea = index + 1;
+          }
+          rows.push(payload);
+        }
+      });
+      return rows;
+    };
+
+    return { addRow, serialize, clear };
+  };
+
+  const detailSection = createSectionManager({
+    template: detailTemplate,
+    list: detailList,
+    attr: 'detail',
+    addButton: addDetailBtn,
+    rowSelector: '[data-detail-row]',
+    assignLineNumber: true
+  });
+  const taxSection = createSectionManager({
+    template: taxTemplate,
+    list: taxList,
+    attr: 'tax',
+    addButton: addTaxBtn,
+    rowSelector: '[data-tax-row]'
+  });
+  const refSection = createSectionManager({
+    template: refTemplate,
+    list: refList,
+    attr: 'ref',
+    addButton: addRefBtn,
+    rowSelector: '[data-ref-row]'
+  });
+
   const fetchCatalog = async (endpoint, key) => {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -273,13 +350,14 @@ const tipoDetalleCatalog = [
 
   const initCatalogs = async () => {
     try {
-      await Promise.all([
-        fetchCatalog('/emisores', 'emisores'),
-        fetchCatalog('/clientes', 'clientes'),
-        fetchCatalog('/formas-pago', 'formas_pago'),
-        fetchCatalog('/condiciones-pago', 'condiciones_pago'),
-        fetchCatalog('/estados-factura', 'estados_factura')
-      ]);
+      const requests = [
+        { endpoint: '/emisores', key: 'emisores' },
+        { endpoint: '/clientes', key: 'clientes' },
+        { endpoint: '/formas-pago', key: 'formas_pago' },
+        { endpoint: '/condiciones-pago', key: 'condiciones_pago' },
+        { endpoint: '/estados-factura', key: 'estados_factura' }
+      ];
+      await Promise.all(requests.map((item) => fetchCatalog(item.endpoint, item.key)));
       populateSelects('tipo_detalle');
       status.textContent = 'Catálogos cargados. Completa la factura.';
     } catch (error) {
@@ -288,72 +366,7 @@ const tipoDetalleCatalog = [
     }
   };
 
-  const addDetailRow = (data = {}) => {
-    if (!detailTemplate || !detailList) return;
-    const clone = detailTemplate.content.cloneNode(true);
-    const row = clone.querySelector('[data-detail-row]');
-    row.querySelectorAll('[data-detail-field]').forEach((input) => {
-      const key = input.dataset.detailField;
-      if (data[key] !== undefined) {
-        input.value = data[key];
-      }
-    });
-    detailList.appendChild(clone);
-  };
-
-  const addTaxRow = (data = {}) => {
-    if (!taxTemplate || !taxList) return;
-    const clone = taxTemplate.content.cloneNode(true);
-    clone.querySelectorAll('[data-tax-field]').forEach((input) => {
-      const key = input.dataset.taxField;
-      if (data[key] !== undefined) {
-        input.value = data[key];
-      }
-    });
-    taxList.appendChild(clone);
-  };
-
-  const addRefRow = (data = {}) => {
-    if (!refTemplate || !refList) return;
-    const clone = refTemplate.content.cloneNode(true);
-    clone.querySelectorAll('[data-ref-field]').forEach((input) => {
-      const key = input.dataset.refField;
-      if (data[key] !== undefined) {
-        input.value = data[key];
-      }
-    });
-    refList.appendChild(clone);
-  };
-
-  addDetailBtn?.addEventListener('click', () => addDetailRow());
-  addTaxBtn?.addEventListener('click', () => addTaxRow());
-  addRefBtn?.addEventListener('click', () => addRefRow());
-
-  addDetailRow();
-
-  const serializeRows = (selector, attribute) => {
-    const rows = [];
-    document.querySelectorAll(selector).forEach((row, index) => {
-      const payload = {};
-      row.querySelectorAll(`[data-${attribute}-field]`).forEach((input) => {
-        const key = input.dataset[`${attribute}Field`];
-        const value = input.value?.trim();
-        if (!value) return;
-        if (input.type === 'number') {
-          payload[key] = Number(value);
-        } else {
-          payload[key] = value;
-        }
-      });
-      if (Object.keys(payload).length) {
-        if (attribute === 'detail' && !payload.nroLinea) {
-          payload.nroLinea = index + 1;
-        }
-        rows.push(payload);
-      }
-    });
-    return rows;
-  };
+  detailSection.addRow();
 
   const getHeaders = () => {
     const token = localStorage.getItem('authToken');
@@ -398,9 +411,9 @@ const tipoDetalleCatalog = [
         body[key] = value || undefined;
       }
     });
-    body.detalles = serializeRows('[data-detail-row]', 'detail');
-    body.impuestos = serializeRows('[data-tax-row]', 'tax');
-    body.referencias = serializeRows('[data-ref-row]', 'ref');
+    body.detalles = detailSection.serialize();
+    body.impuestos = taxSection.serialize();
+    body.referencias = refSection.serialize();
     try {
       const response = await fetch(`${apiBase}/facturas`, {
         method: 'POST',
@@ -412,10 +425,10 @@ const tipoDetalleCatalog = [
         throw new Error(err.message || 'No se pudo crear la factura');
       }
       form.reset();
-      detailList.innerHTML = '';
-      taxList.innerHTML = '';
-      refList.innerHTML = '';
-      addDetailRow();
+      detailSection.clear();
+      taxSection.clear();
+      refSection.clear();
+      detailSection.addRow();
       status.textContent = 'Factura registrada correctamente.';
       status.classList.add('text-green-600');
     } catch (error) {

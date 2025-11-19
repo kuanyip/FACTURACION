@@ -1,8 +1,9 @@
 ﻿---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Icon from '../components/Icon.astro';
+import { API_BASE } from '../lib/config';
 
-const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:3800/api';
+const apiBase = API_BASE;
 const catalogs = [
   {
     key: 'emisores',
