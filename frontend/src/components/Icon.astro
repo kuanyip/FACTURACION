@@ -13,7 +13,8 @@ type IconName =
   | 'refresh'
   | 'edit'
   | 'trash'
-  | 'close';
+  | 'close'
+  | 'logout';
 
 const { name = 'form', size = 20, class: className = '' } = Astro.props as { name: IconName; size?: number; class?: string };
 
@@ -76,6 +77,10 @@ const ICON_PATHS: Record<IconName, Array<Record<string, string>>> = {
   close: [
     { d: 'M6 6l12 12', strokeLinecap: 'round' },
     { d: 'M6 18L18 6', strokeLinecap: 'round' }
+  ],
+  logout: [
+    { d: 'M16 17l5-5-5-5', strokeLinecap: 'round', strokeLinejoin: 'round' },
+    { d: 'M10 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6', strokeLinecap: 'round', strokeLinejoin: 'round' }
   ]
 };
 

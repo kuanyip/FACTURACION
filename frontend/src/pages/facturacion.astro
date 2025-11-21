@@ -338,11 +338,15 @@ const tipoDetalleCatalog = [
           option.textContent = item.razonSocial || item.name || item.email;
         } else if (key === 'emisores') {
           option.textContent = item.razonSocial || item.nombre || item.rut;
-        } else if (key === 'tipo_detalle') {
-          option.textContent = `${item.codigo} - ${item.nombre}`;
-        } else {
-          option.textContent = item.nombre || item.codigo || `#${item.id}`;
-        }
+      } else if (key === 'tipo_detalle') {
+        option.textContent = `${item.codigo} - ${item.nombre}`;
+      } else if (key === 'formas_pago') {
+        const code = item.codigo || item.code;
+        const name = item.nombre || item.name;
+        option.textContent = code ? `${code} · ${name || 'sin nombre'}` : name || `#${item.id}`;
+      } else {
+        option.textContent = item.nombre || item.codigo || `#${item.id}`;
+      }
         select.appendChild(option);
       });
     });

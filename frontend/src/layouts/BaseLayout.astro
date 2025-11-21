@@ -1,8 +1,10 @@
 ﻿---
 import '../styles/global.css';
 import Icon from '../components/Icon.astro';
+import AuthCard from '../components/AuthCard.astro';
+import { API_BASE } from '../lib/config';
 
-const { title = 'Panel de facturacion' } = Astro.props;
+const { title = 'Panel de facturacion', apiBase = API_BASE } = Astro.props;
 const pathname = Astro.url.pathname || '/';
 const navItems = [
   { href: '/', label: 'Dashboard', icon: 'chart' },
@@ -19,31 +21,84 @@ const navItems = [
   </head>
   <body class="min-h-screen text-slate-900">
     <header class="px-4 py-6">
-      <div class="mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div class="mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur">
         <div>
           <p class="text-xs uppercase tracking-[0.4em] text-primary">Sistema de facturacion</p>
           <h1 class="text-3xl font-semibold text-slate-900">{title}</h1>
         </div>
-        <nav class="flex flex-wrap gap-2 text-sm text-primary">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <a
-                class={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition ${
-                  isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'text-primary hover:bg-primary/10'
-                }`}
-                href={item.href}
-              >
-                <Icon name={item.icon} size={18} class={isActive ? 'text-white' : 'text-primary'} />
-                {item.label}
-              </a>
-            );
-          })}
-        </nav>
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <nav class="flex flex-wrap gap-2 text-sm text-primary">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <a
+                  class={`inline-flex items-center gap-2 rounded-full px-4 py-2 transition ${
+                    isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'text-primary hover:bg-primary/10'
+                  }`}
+                  href={item.href}
+                >
+                  <Icon name={item.icon} size={18} class={isActive ? 'text-white' : 'text-primary'} />
+                  {item.label}
+                </a>
+              );
+            })}
+          </nav>
+          <button
+            data-logout-button
+            type="button"
+            class="hidden inline-flex items-center gap-2 rounded-full border border-transparent bg-gradient-to-r from-primary to-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/40 transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Icon name="logout" size={18} class="text-white" />
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     </header>
-    <main class="mx-auto max-w-6xl px-4 py-8">
+    <section data-guest-section class="mx-auto max-w-6xl px-4 py-8">
+      <div class="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900 md:flex-row md:items-center">
+        <Icon name="lock" size={18} />
+        <p class="flex-1">
+          Acceso seguro requerido en todas las secciones. Inicia sesión desde el Dashboard para habilitar operaciones
+          protegidas y ver el botón “Cerrar sesión” en cada pestaña.
+        </p>
+      </div>
+      <div class="mt-6">
+        <AuthCard apiBase={apiBase} />
+      </div>
+    </section>
+    <section data-protected-section class="mx-auto max-w-6xl px-4 py-8 hidden">
       <slot />
-    </main>
+    </section>
+    <script type="module">
+      const logoutButton = document.querySelector('[data-logout-button]');
+      const guestSection = document.querySelector('[data-guest-section]');
+      const protectedSection = document.querySelector('[data-protected-section]');
+
+      const updateAuthState = () => {
+        const token = localStorage.getItem('authToken');
+        const isLogged = Boolean(token);
+        logoutButton?.classList.toggle('hidden', !isLogged);
+        guestSection?.classList.toggle('hidden', isLogged);
+        protectedSection?.classList.toggle('hidden', !isLogged);
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        updateAuthState();
+      };
+
+      logoutButton?.addEventListener('click', handleLogout);
+      window.addEventListener('auth:login', updateAuthState);
+      window.addEventListener('auth:logout', updateAuthState);
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'authToken' || event.key === 'authUser') {
+          updateAuthState();
+        }
+      });
+
+      updateAuthState();
+    </script>
   </body>
 </html>
