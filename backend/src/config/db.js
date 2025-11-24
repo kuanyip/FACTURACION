@@ -3,8 +3,8 @@
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'mysql',
   port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'billing_user',
-  password: process.env.DB_PASSWORD || 'billing_secret',
+  user: process.env.DB_USER || 'facturacion_user',
+  password: process.env.DB_PASSWORD || 'facturacion_secret',
   database: process.env.DB_NAME || 'facturacion',
   waitForConnections: true,
   connectionLimit: 10,

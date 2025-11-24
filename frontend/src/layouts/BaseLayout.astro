@@ -18,8 +18,34 @@ const navItems = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <style>
+      [data-guest-section],
+      [data-protected-section] {
+        display: none;
+      }
+
+      body[data-authenticated='true'] [data-guest-section] {
+        display: none !important;
+      }
+      body[data-authenticated='true'] [data-protected-section] {
+        display: block !important;
+      }
+      body[data-authenticated='false'] [data-protected-section] {
+        display: none !important;
+      }
+      body[data-authenticated='false'] [data-guest-section] {
+        display: block !important;
+      }
+    </style>
   </head>
   <body class="min-h-screen text-slate-900">
+    <script>
+      try {
+        document.body.dataset.authenticated = localStorage.getItem('authToken') ? 'true' : 'false';
+      } catch (error) {
+        document.body.dataset.authenticated = 'false';
+      }
+    </script>
     <header class="px-4 py-6">
       <div class="mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl bg-white/70 p-6 shadow-xl shadow-primary/10 backdrop-blur">
         <div>
@@ -66,20 +92,17 @@ const navItems = [
         <AuthCard apiBase={apiBase} />
       </div>
     </section>
-    <section data-protected-section class="mx-auto max-w-6xl px-4 py-8 hidden">
+    <section data-protected-section class="mx-auto max-w-6xl px-4 py-8">
       <slot />
     </section>
     <script type="module">
       const logoutButton = document.querySelector('[data-logout-button]');
-      const guestSection = document.querySelector('[data-guest-section]');
-      const protectedSection = document.querySelector('[data-protected-section]');
 
       const updateAuthState = () => {
         const token = localStorage.getItem('authToken');
         const isLogged = Boolean(token);
+        document.body.dataset.authenticated = isLogged ? 'true' : 'false';
         logoutButton?.classList.toggle('hidden', !isLogged);
-        guestSection?.classList.toggle('hidden', isLogged);
-        protectedSection?.classList.toggle('hidden', !isLogged);
       };
 
       const handleLogout = () => {

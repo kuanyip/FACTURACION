@@ -3,13 +3,13 @@
 services:
   mysql:
     image: mysql:8.3
-    container_name: billing-mysql
+    container_name: facturacion-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: billing
-      MYSQL_USER: billing_user
-      MYSQL_PASSWORD: billing_secret
+      MYSQL_DATABASE: facturacion
+      MYSQL_USER: facturacion_user
+      MYSQL_PASSWORD: facturacion_secret
     ports:
       - "33306:3306"
     volumes:
@@ -21,7 +21,7 @@ services:
       retries: 5
 
   backend:
-    container_name: billing-backend
+    container_name: facturacion-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    container_name: billing-frontend
+    container_name: facturacion-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
 
   phpmyadmin:
-    container_name: billing-phpmyadmin
+    container_name: facturacion-phpmyadmin
     build:
       context: ./phpmyadmin
       dockerfile: Dockerfile

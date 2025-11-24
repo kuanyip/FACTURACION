@@ -32,7 +32,7 @@ app.use(morgan('dev'));
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'billing-api',
+    service: 'facturacion-api',
     version
   });
 });
